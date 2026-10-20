@@ -253,9 +253,10 @@ const COLS=[
 const val={can:x=>(x.r.m+' '+x.r.s).toLowerCase(),score:x=>x.score,q:x=>x.q,e:x=>x.e,w:x=>x.w,l:x=>x.l.v,p:x=>x.p.v,d:x=>x.r.d,host:x=>x.r.h+x.r.y};
 
 let editing=null,noteOpen=null;
+var dragging=false;
 function render(){
   buildCatSelect();
-  ['q','w','l','p'].forEach(m=>{$('w-'+m).value=st.w[m];});
+  ['q','w','l','p'].forEach(m=>{const el=$('w-'+m);if(document.activeElement!==el||!dragging)el.value=st.w[m];});
   const tot=st.w.q+st.w.w+st.w.l+st.w.p;
   ['q','w','l','p'].forEach(m=>{$('o-'+m).textContent=st.w[m]+'%'});
   document.querySelectorAll('#yr button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===st.yr));
@@ -348,7 +349,13 @@ function setWeight(m,v){v=Math.max(0,Math.min(100,Math.round(v)));const others=[
 function normWeights(){const t=['q','w','l','p'].reduce((s,k)=>s+(+st.w[k]||0),0);if(t===100)return;
   if(!t){st.w={q:50,w:50,l:0,p:0};return}const q=st.w.q;st.w.q=(+q||0)/t*100;setWeight('q',st.w.q)}
 normWeights();
-['q','w','l','p'].forEach(m=>$('w-'+m).addEventListener('input',e=>{setWeight(m,+e.target.value);st.sort={k:'score',dir:'desc'};render()}));
+let raf=0;
+function onSlide(m,e,end){setWeight(m,+e.target.value);st.sort={k:'score',dir:'desc'};dragging=!end;
+  if(end){cancelAnimationFrame(raf);raf=0;render();return}
+  if(!raf)raf=requestAnimationFrame(()=>{raf=0;render()})}
+['q','w','l','p'].forEach(m=>{const el=$('w-'+m);
+  el.addEventListener('input',e=>onSlide(m,e,false));
+  el.addEventListener('change',e=>onSlide(m,e,true));});
 $('wreset').addEventListener('click',()=>{st.w={q:50,w:50,l:0,p:0};st.sort={k:'score',dir:'desc'};render()});
 function copy(text,msg){const done=()=>toast(msg);try{navigator.clipboard.writeText(text).then(done,()=>fallback())}catch(e){fallback()}
   function fallback(){$('importBox').hidden=false;$('importText').value=text;$('importText').select();$('importMsg').textContent='Copy this text with your keyboard.'}}
