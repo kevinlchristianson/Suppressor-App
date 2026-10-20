@@ -53,6 +53,10 @@ input[type=search]{width:200px}
 .wt .top{display:flex;justify-content:space-between;align-items:baseline}
 .wt output{font-family:var(--f-mono);font-size:12.5px;color:var(--ink-2)}
 input[type=range]{width:100%;accent-color:var(--accent)}
+.mix{display:grid;gap:6px;margin-top:16px;padding-top:14px;border-top:1px solid var(--rule)}
+.mixrow{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;align-items:center;font-size:13px;color:var(--ink-2)}
+.mixrow output{font-family:var(--f-mono);font-size:12.5px}
+@media (max-width:600px){.mixrow{grid-template-columns:1fr 1fr}.mixrow input{grid-column:1/-1;grid-row:1}.mixrow span:last-child{text-align:right}}
 .wthead{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:12px}
 .hint{color:var(--ink-3);font-size:12.5px;margin:0}
 .leaders{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px}
@@ -137,6 +141,11 @@ footer p{margin:0}
       <div class="wt"><div class="top"><label class="lbl" for="w-l">Length past muzzle</label><output id="o-l"></output></div><input type="range" id="w-l" min="0" max="100" step="1"></div>
       <div class="wt"><div class="top"><label class="lbl" for="w-p">Price</label><output id="o-p"></output></div><input type="range" id="w-p" min="0" max="100" step="1"></div>
     </div>
+    <div class="mix">
+      <label class="lbl" for="mix">How Sound is scored</label>
+      <div class="mixrow"><span>Peak dB(A) <output id="o-ma"></output></span><input type="range" id="mix" min="0" max="100" step="5" aria-describedby="mixhint"><span><output id="o-mi"></output> Impulse</span></div>
+      <p class="hint" id="mixhint">Peak dB(A) is the loudest instant of the shot. Impulse (Im-dB) also counts how long the pressure lasts, so it catches a long, boomy tail. Slide to set your own mix.</p>
+    </div>
     <p class="hint" style="margin-top:12px">The four sliders always add up to 100%, and moving one sorts the results by score. Each can gets 0–100 per measure against every other can in the hosts and bores you picked (100 is the quietest, lightest, shortest or cheapest). The score is the weighted average. A can missing a measure you weight (usually price) gets no score.</p>
   </section>
 
@@ -170,7 +179,7 @@ footer p{margin:0}
   </section>
 
   <footer>
-    <p><b>Sound</b> is the mil-spec average dB(A) of the left and right muzzle mics (lower is quieter). <b>Ear</b> is dB(A) at the shooter's ear. Data: TBAC Silencer Summit 2025 and 2026; both years used the same hosts and mics, so they can be pooled.</p>
+    <p><b>Peak dB(A)</b> is the mil-spec average dB(A) of the left and right muzzle mics, and <b>Impulse</b> is the average of their Im-dB (lower is quieter for both). The Sound score blends the two by your mix. <b>Ear</b> is dB(A) at the shooter's ear. Data: TBAC Silencer Summit 2025 and 2026; both years used the same hosts and mics, so they can be pooled.</p>
     <p><b>Length past muzzle</b> is the Summit overall length, except for over-the-barrel cans (tagged OTB), where it is the length added to the gun: Dead Air Nomad Ti OTB 4.6 in (Dead Air), Unknown OG 30 4.0 in (Unknown Suppressors), B&amp;T TiRe-X with OTB about 4.1 in (estimate from reviews). TiRe-X Compact has no published figure, so it shows overall length with a question mark until you enter one.</p>
     <p><b>Price</b> comes from Kevin's price list first (Oct 2026, before tax and stamp), then the whichcan.com catalog MSRP (tagged <i>cat.</i>). <span class="est">Orange</span> prices are estimates. One very high price in a field, like $6,000 on the Typhon 56, squeezes everyone else's price scores together.</p>
   </footer>
@@ -188,11 +197,11 @@ const LS='suppressor-bench-v1';
 const $=id=>document.getElementById(id);
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const canKey=r=>r.m+'|'+r.s;
-let st={yr:'both',cats:['.300BO-16BA|.30'],q:'',onlySaved:false,onlyPriced:false,w:{q:50,w:50,l:0,p:0},sort:{k:'score',dir:'desc'},saved:[],notes:{},price:{},len:{}};
+let st={yr:'both',cats:['.300BO-16BA|.30'],q:'',onlySaved:false,onlyPriced:false,w:{q:50,w:50,l:0,p:0},mix:50,sort:{k:'score',dir:'desc'},saved:[],notes:{},price:{},len:{}};
 try{const s=JSON.parse(localStorage.getItem(LS)||'null');if(s){if(s.cat&&!s.cats){s.cats=s.cat==='all'?null:[s.cat];delete s.cat;if(!s.cats)s.cats=[...new Set(RAW.rows.map(r=>r.h+'|'+r.b))]}st=Object.assign(st,s,{q:''});}}catch(e){}
 // shared link: ?saved=key1~key2 (GitHub Pages) or #saved:... is not used; query string only
 try{const u=new URL(location.href);const sv=u.searchParams.get('saved');if(sv){const add=sv.split('~').map(decodeURIComponent).filter(k=>RAW.rows.some(r=>canKey(r)===k));st.saved=[...new Set([...st.saved,...add])];const n=u.searchParams.get('notes');if(n){const o=JSON.parse(n);for(const k in o)if(add.includes(k)&&!st.notes[k])st.notes[k]=String(o[k]).slice(0,200)}}}catch(e){}
-const save=()=>{try{localStorage.setItem(LS,JSON.stringify({yr:st.yr,cats:st.cats,onlySaved:st.onlySaved,onlyPriced:st.onlyPriced,w:st.w,sort:st.sort,saved:st.saved,notes:st.notes,price:st.price,len:st.len}))}catch(e){}};
+const save=()=>{try{localStorage.setItem(LS,JSON.stringify({yr:st.yr,cats:st.cats,onlySaved:st.onlySaved,onlyPriced:st.onlyPriced,w:st.w,mix:st.mix,sort:st.sort,saved:st.saved,notes:st.notes,price:st.price,len:st.len}))}catch(e){}};
 function toast(t){const el=$('toast');el.textContent=t;el.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>el.hidden=true,1800)}
 
 // effective values with the viewer's overrides
@@ -221,13 +230,14 @@ function buildCatPicker(){
 
 // score each row within its host × bore field for the chosen years
 function scored(){
-  const rows=RAW.rows.filter(inYear).map(r=>({r,q:r.q,e:r.e,w:r.w,l:length(r),p:price(r)}));
+  const rows=RAW.rows.filter(inYear).map(r=>({r,q:r.q,i:r.i,e:r.e,w:r.w,l:length(r),p:price(r)}));
   const sel=selected();const groups=new Map();rows.forEach(x=>{const fk=x.r.h+'|'+x.r.b;const k=sel.has(fk)?'sel':fk;(groups.get(k)||groups.set(k,[]).get(k)).push(x)});
   const W=st.w,tot=W.q+W.w+W.l+W.p;
   groups.forEach(g=>{
-    const get={q:x=>x.q,w:x=>x.w,l:x=>x.l.v,p:x=>x.p.v};
+    const get={qa:x=>x.q,qi:x=>x.i,w:x=>x.w,l:x=>x.l.v,p:x=>x.p.v};const mi=st.mix/100;
     const rng={};for(const m in get){const v=g.map(get[m]).filter(v=>v!=null);rng[m]=[Math.min(...v),Math.max(...v)]}
     g.forEach(x=>{x.s={};for(const m in get){const v=get[m](x);const[lo,hi]=rng[m];x.s[m]=v==null?null:(hi===lo?100:(hi-v)/(hi-lo)*100)}
+      x.s.q=x.s.qi==null?x.s.qa:(1-mi)*x.s.qa+mi*x.s.qi;
       if(tot===0){x.score=null;return}
       let s=0,ok=true;for(const m in W){if(!W[m])continue;if(x.s[m]==null){ok=false;break}s+=W[m]*x.s[m]}
       x.score=ok?s/tot:null});
@@ -253,14 +263,15 @@ const metric=(txt,s)=>`<span class="metric"><span>${txt}</span>${bar(s)}</span>`
 const COLS=[
   {k:'can',t:'Can',cls:'l sticky'},
   {k:'score',t:'Score',def:'desc'},
-  {k:'q',t:'Sound dB(A)',def:'asc'},
+  {k:'q',t:'Peak dB(A)',def:'asc'},
+  {k:'i',t:'Impulse dB',def:'asc'},
   {k:'e',t:'Ear dB(A)',def:'asc'},
   {k:'w',t:'Weight oz',def:'asc'},
   {k:'l',t:'Length in',def:'asc'},
   {k:'p',t:'Price',def:'asc'},
   {k:'d',t:'Dia in',def:'asc'},
   {k:'host',t:'Host · year',cls:'l'}];
-const val={can:x=>(x.r.m+' '+x.r.s).toLowerCase(),score:x=>x.score,q:x=>x.q,e:x=>x.e,w:x=>x.w,l:x=>x.l.v,p:x=>x.p.v,d:x=>x.r.d,host:x=>x.r.h+x.r.y};
+const val={can:x=>(x.r.m+' '+x.r.s).toLowerCase(),score:x=>x.score,q:x=>x.q,i:x=>x.i,e:x=>x.e,w:x=>x.w,l:x=>x.l.v,p:x=>x.p.v,d:x=>x.r.d,host:x=>x.r.h+x.r.y};
 
 let editing=null,noteOpen=null;
 var dragging=false;
@@ -269,6 +280,7 @@ function render(){
   ['q','w','l','p'].forEach(m=>{const el=$('w-'+m);if(document.activeElement!==el||!dragging)el.value=st.w[m];});
   const tot=st.w.q+st.w.w+st.w.l+st.w.p;
   ['q','w','l','p'].forEach(m=>{$('o-'+m).textContent=st.w[m]+'%'});
+  $('mix').value=st.mix;$('o-ma').textContent=(100-st.mix)+'%';$('o-mi').textContent=st.mix+'%';
   document.querySelectorAll('#yr button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===st.yr));
   $('onlySaved').checked=st.onlySaved;$('onlyPriced').checked=st.onlyPriced;
   const {rows,groups}=scored();
@@ -286,11 +298,11 @@ function render(){
     const[h,b]=st.cats[0].split('|');const bare=one?RAW.bare.filter(x=>x.h===h&&inYear(x)):[];
     $('cat-title').textContent=one?`${hostName(h)} with ${b} cans`:$('catSum').textContent;
     const best=(fn)=>{let m=null;field.forEach(x=>{const v=fn(x);if(v!=null&&(m==null||v<m.v))m={v,x}});return m};
-    const lead=(k,m,fmt)=>`<div class="leader"><span class="k">${k}</span>${m?`<span class="v">${fmt(m.v)}</span><span class="n">${esc(m.x.r.m)} ${esc(m.x.r.s)} · ${m.x.r.y}</span>`:'<span class="n muted">No data</span>'}</div>`;
+    const lead=(k,m,fmt)=>`<div class="leader"><span class="k">${k}</span>${m?`<span class="v">${fmt(m.v,m.x)}</span><span class="n">${esc(m.x.r.m)} ${esc(m.x.r.s)} · ${m.x.r.y}</span>`:'<span class="n muted">No data</span>'}</div>`;
     const top=field.filter(x=>x.rank===1)[0];
     $('leaders').innerHTML=
       `<div class="leader"><span class="k">Top score</span>${top?`<span class="v">${top.score.toFixed(0)}</span><span class="n">${esc(top.r.m)} ${esc(top.r.s)} · ${top.r.y}</span>`:'<span class="n muted">Set a weight above</span>'}</div>`+
-      lead('Quietest',best(x=>x.q),v=>v.toFixed(1)+' dB')+lead('Lightest',best(x=>x.w),v=>v.toFixed(1)+' oz')+
+      lead('Quietest (your mix)',best(x=>x.s.q==null?null:-x.s.q),(v,x)=>x.q.toFixed(1)+' dB'+(x.i!=null?` / ${x.i.toFixed(1)}`:''))+lead('Lightest',best(x=>x.w),v=>v.toFixed(1)+' oz')+
       lead('Shortest past muzzle',best(x=>x.l.v),v=>v.toFixed(2)+' in')+lead('Cheapest',best(x=>x.p.v),v=>'$'+Math.round(v).toLocaleString('en-US'))+
       (bare.length?`<div class="leader"><span class="k">Bare muzzle</span><span class="v">${(bare.reduce((s,x)=>s+x.q,0)/bare.length).toFixed(1)} dB</span><span class="n">Unsuppressed reference</span></div>`:'')+
       (one?'':`<div class="leader"><span class="k">Mixed hosts</span><span class="n">These cans are scored together on one scale. Sound from different hosts isn't a fair fight: a .22 pistol is always quieter than a .300 Win Mag.</span></div>`);
@@ -303,7 +315,8 @@ function render(){
     return`<tr class="${sv?'saved':''}" data-rid="${esc(key+'|'+r.y+'|'+r.h)}">
 <td class="l can sticky"><button type="button" class="star" data-star="${id}" aria-pressed="${sv}" aria-label="${sv?'Unstar':'Star'} ${esc(r.m+' '+r.s)}">${sv?'★':'☆'}</button><div><div class="mf">${esc(r.m)}</div><div class="md">${esc(r.s)}${r.otb?'<span class="tag otb" title="Over the barrel">OTB</span>':''}${r.dc?'<span class="tag" title="Discontinued per whichcan.com">disc.</span>':''}</div>${sv&&st.notes[key]?`<div class="note">${esc(st.notes[key])}</div>`:''}</div></td>
 <td>${x.score!=null?`<span class="score">${x.score.toFixed(0)}</span> <span class="rank">#${x.rank}</span>`:'<span class="muted">—</span>'}</td>
-<td>${metric(x.q.toFixed(1),x.s.q)}</td>
+<td>${metric(x.q.toFixed(1),x.s.qa)}</td>
+<td>${metric(x.i!=null?x.i.toFixed(1):'—',x.s.qi)}</td>
 <td>${x.e!=null?x.e.toFixed(1):'—'}</td>
 <td>${metric(x.w!=null?x.w.toFixed(1):'—',x.s.w)}</td>
 <td>${le?`<input type="number" step="0.05" min="0" data-in="l" data-key="${id}" value="${x.l.v??''}" aria-label="Length past muzzle, inches">`:metric(`<button type="button" class="edit" data-ed="l" data-key="${id}">${fmtLen(x.l)}</button>`,x.s.l)}</td>
@@ -323,8 +336,8 @@ function renderSaved(rows){
     const tests=RAW.rows.filter(r=>canKey(r)===key);if(!tests.length)return'';
     const r0=tests[0];const sc=rows.filter(x=>canKey(x.r)===key);
     const p=price(r0),l=length(r0);
-    const lines=sc.length?sc.sort((a,b)=>a.q-b.q).map(x=>`<tr><td class="l">${esc(hostName(x.r.h))} · ${esc(x.r.b)} · ${x.r.y}</td><td>${x.q.toFixed(1)}</td><td>${x.e!=null?x.e.toFixed(1):'—'}</td><td>${x.score!=null?x.score.toFixed(0)+' <span class="rank">#'+x.rank+' of '+x.n+'</span>':'—'}</td></tr>`).join(''):`<tr><td class="l muted" colspan="4">Not tested in the selected year</td></tr>`;
-    return`<div class="tblwrap"><table><thead><tr><th class="l" scope="col"><button type="button" class="star" data-star="${esc(key)}" aria-pressed="true" aria-label="Unstar">★</button> ${esc(r0.m)} ${esc(r0.s)}${r0.otb?'<span class="tag otb">OTB</span>':''} <span class="muted" style="text-transform:none;letter-spacing:0;font-weight:400">· ${r0.w!=null?r0.w.toFixed(1)+' oz':''} · ${l.v!=null?l.v.toFixed(2)+' in':''} · ${p.v!=null?'$'+Math.round(p.v).toLocaleString('en-US'):'no price'}</span><div class="svwrap"><label class="lbl" for="sn-${esc(key)}">Why this can?</label><input class="svnote" id="sn-${esc(key)}" data-svnote="${esc(key)}" maxlength="200" placeholder="e.g. Dirt cheap 9mm PCC can" value="${esc(st.notes[key]||'')}"></div></th><th scope="col">Sound</th><th scope="col">Ear</th><th scope="col">Score</th></tr></thead><tbody>${lines}</tbody></table></div>`}).join('');
+    const lines=sc.length?sc.sort((a,b)=>a.q-b.q).map(x=>`<tr><td class="l">${esc(hostName(x.r.h))} · ${esc(x.r.b)} · ${x.r.y}</td><td>${x.q.toFixed(1)}</td><td>${x.i!=null?x.i.toFixed(1):'—'}</td><td>${x.e!=null?x.e.toFixed(1):'—'}</td><td>${x.score!=null?x.score.toFixed(0)+' <span class="rank">#'+x.rank+' of '+x.n+'</span>':'—'}</td></tr>`).join(''):`<tr><td class="l muted" colspan="5">Not tested in the selected year</td></tr>`;
+    return`<div class="tblwrap"><table><thead><tr><th class="l" scope="col"><button type="button" class="star" data-star="${esc(key)}" aria-pressed="true" aria-label="Unstar">★</button> ${esc(r0.m)} ${esc(r0.s)}${r0.otb?'<span class="tag otb">OTB</span>':''} <span class="muted" style="text-transform:none;letter-spacing:0;font-weight:400">· ${r0.w!=null?r0.w.toFixed(1)+' oz':''} · ${l.v!=null?l.v.toFixed(2)+' in':''} · ${p.v!=null?'$'+Math.round(p.v).toLocaleString('en-US'):'no price'}</span><div class="svwrap"><label class="lbl" for="sn-${esc(key)}">Why this can?</label><input class="svnote" id="sn-${esc(key)}" data-svnote="${esc(key)}" maxlength="200" placeholder="e.g. Dirt cheap 9mm PCC can" value="${esc(st.notes[key]||'')}"></div></th><th scope="col">Peak</th><th scope="col">Impulse</th><th scope="col">Ear</th><th scope="col">Score</th></tr></thead><tbody>${lines}</tbody></table></div>`}).join('');
   $('saved').innerHTML=out;
 }
 
@@ -369,15 +382,17 @@ function onSlide(m,e,end){setWeight(m,+e.target.value);st.sort={k:'score',dir:'d
 ['q','w','l','p'].forEach(m=>{const el=$('w-'+m);
   el.addEventListener('input',e=>onSlide(m,e,false));
   el.addEventListener('change',e=>onSlide(m,e,true));});
+$('mix').addEventListener('input',e=>{st.mix=+e.target.value;st.sort={k:'score',dir:'desc'};if(!raf)raf=requestAnimationFrame(()=>{raf=0;render()})});
+$('mix').addEventListener('change',e=>{st.mix=+e.target.value;render()});
 $('wreset').addEventListener('click',()=>{st.w={q:50,w:50,l:0,p:0};st.sort={k:'score',dir:'desc'};render()});
 function copy(text,msg){const done=()=>toast(msg);try{navigator.clipboard.writeText(text).then(done,()=>fallback())}catch(e){fallback()}
   function fallback(){$('importBox').hidden=false;$('importText').value=text;$('importText').select();$('importMsg').textContent='Copy this text with your keyboard.'}}
 $('copyLink').addEventListener('click',()=>{if(!st.saved.length){toast('Star a can first');return}
   const u=new URL(location.href);u.hash='';u.search='?saved='+st.saved.map(encodeURIComponent).join('~');const nn={};st.saved.forEach(k=>{if(st.notes[k])nn[k]=st.notes[k]});if(Object.keys(nn).length)u.searchParams.set('notes',JSON.stringify(nn));copy(u.toString(),'Share link copied')});
-$('copyJson').addEventListener('click',()=>copy(JSON.stringify({saved:st.saved,notes:st.notes,price:st.price,len:st.len,w:st.w}),'Backup copied'));
+$('copyJson').addEventListener('click',()=>copy(JSON.stringify({saved:st.saved,notes:st.notes,price:st.price,len:st.len,w:st.w,mix:st.mix}),'Backup copied'));
 $('showImport').addEventListener('click',()=>{$('importBox').hidden=!$('importBox').hidden;$('importMsg').textContent=''});
 $('doImport').addEventListener('click',()=>{try{const o=JSON.parse($('importText').value);
-  if(Array.isArray(o.saved))st.saved=[...new Set([...st.saved,...o.saved])];if(o.notes)Object.assign(st.notes,o.notes);if(o.price)Object.assign(st.price,o.price);if(o.len)Object.assign(st.len,o.len);if(o.w){st.w=o.w;normWeights()}
+  if(Array.isArray(o.saved))st.saved=[...new Set([...st.saved,...o.saved])];if(o.notes)Object.assign(st.notes,o.notes);if(o.price)Object.assign(st.price,o.price);if(o.len)Object.assign(st.len,o.len);if(o.w){st.w=o.w;normWeights()}if(o.mix!=null)st.mix=+o.mix;
   $('importBox').hidden=true;$('importText').value='';render();toast('Backup restored')}catch(e){$('importMsg').textContent='That text is not a backup from this page. Copy it again with "Copy backup".'}});
 $('clearSaved').addEventListener('click',e=>{const b=e.currentTarget;if(b.dataset.armed){st.saved=[];delete b.dataset.armed;b.textContent='Clear stars';render();return}
   b.dataset.armed=1;b.textContent='Click again to clear';setTimeout(()=>{delete b.dataset.armed;b.textContent='Clear stars'},3000)});

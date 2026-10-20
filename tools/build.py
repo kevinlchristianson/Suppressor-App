@@ -29,10 +29,11 @@ for y,f in [(2025,'summit2025_all.csv'),(2026,'summit2026_all.csv')]:
         if len(r)<27: continue
         num=lambda i: float(r[i]) if r[i].strip() else None
         q=round((num(7)+num(13))/2,2); e=num(19)
+        imp=round((num(10)+num(16))/2,2) if r[10].strip() and r[16].strip() else None
         if r[1]=='Bare':
             bare.append({'y':y,'h':r[4],'q':q,'e':e,'n':r[2]}); continue
         m=mf(r[1]); s=r[2].strip()
-        d={'y':y,'h':r[4],'b':r[3],'m':m,'s':s,'q':q,'e':e,'w':num(24),'l':num(25),'d':num(26),'p':None,'pb':None}
+        d={'y':y,'h':r[4],'b':r[3],'m':m,'s':s,'q':q,'i':imp,'e':e,'w':num(24),'l':num(25),'d':num(26),'p':None,'pb':None}
         k=(norm(m),norm(s))
         if k in pl: d['p'],d['pb']=pl[k]
         c=cm.get(k)
