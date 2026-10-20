@@ -6,7 +6,7 @@
 :root{
   --bg:#f4f6f7; --panel:#ffffff; --ink:#111518; --ink-2:#4b555c; --ink-3:#6f7a81;
   --rule:#dde3e7; --chip:#e8eef2; --accent:#2a78d6; --accent-ink:#ffffff;
-  --good:#1a8f63; --bar:#c9d6df; --star:#d99a00; --warn:#a85d00; --row-hi:#eef5fd;
+  --good:#1a8f63; --mid:#c98a12; --bad:#c8453a; --bar:#c9d6df; --star:#d99a00; --warn:#a85d00; --row-hi:#eef5fd;
   --f-display:"Barlow Condensed","Arial Narrow",Arial,sans-serif;
   --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
   --f-mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
@@ -14,11 +14,11 @@
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
   --bg:#121618; --panel:#1a1f22; --ink:#eef2f4; --ink-2:#b7c1c7; --ink-3:#8f9aa1;
   --rule:#2a3236; --chip:#242b2f; --accent:#4a93ea; --accent-ink:#0d1114;
-  --good:#3cc28f; --bar:#34404a; --star:#f0b93a; --warn:#e0a24a; --row-hi:#1d2a36; color-scheme:dark}}
+  --good:#3cc28f; --mid:#e0a63a; --bad:#e8675b; --bar:#34404a; --star:#f0b93a; --warn:#e0a24a; --row-hi:#1d2a36; color-scheme:dark}}
 :root[data-theme="dark"]{
   --bg:#121618; --panel:#1a1f22; --ink:#eef2f4; --ink-2:#b7c1c7; --ink-3:#8f9aa1;
   --rule:#2a3236; --chip:#242b2f; --accent:#4a93ea; --accent-ink:#0d1114;
-  --good:#3cc28f; --bar:#34404a; --star:#f0b93a; --warn:#e0a24a; --row-hi:#1d2a36; color-scheme:dark}
+  --good:#3cc28f; --mid:#e0a63a; --bad:#e8675b; --bar:#34404a; --star:#f0b93a; --warn:#e0a24a; --row-hi:#1d2a36; color-scheme:dark}
 *{box-sizing:border-box}
 [hidden]{display:none!important}
 body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:14px;line-height:1.45;margin:0}
@@ -78,6 +78,8 @@ tr.saved td{background:var(--row-hi)}
 .metric{display:inline-grid;grid-template-columns:auto 44px;gap:8px;align-items:center;justify-items:end}
 .mbar{width:44px;height:5px;border-radius:3px;background:var(--bar);overflow:hidden;display:block}
 .mbar i{display:block;height:100%;background:var(--good)}
+.mbar i.mid{background:var(--mid)}
+.mbar i.bad{background:var(--bad)}
 .est{color:var(--warn)}
 .mine{color:var(--accent);font-weight:600}
 .muted{color:var(--ink-3)}
@@ -137,7 +139,7 @@ footer p{margin:0}
 
   <section style="display:grid;gap:10px">
     <div class="reshead"><h2>Results</h2><span class="hint" id="count"></span></div>
-    <p class="hint">Lower is better for every number here. The green bars are scores, so a <b>longer bar means better</b>: quieter, lighter, shorter or cheaper than the rest of the field.</p>
+    <p class="hint">Lower is better for every number here. Bars show where a can sits in its field: a longer bar means louder, heavier, longer or pricier, and the color runs from <b style="color:var(--good)">green</b> (best third) to <b style="color:var(--bad)">red</b> (worst third). Score is the opposite: higher is better.</p>
     <div class="tblwrap"><table id="tbl" aria-describedby="count"></table></div>
     <p class="hint">Click a column to sort. Click any price or length to enter your own number; it is saved in this browser and shown in <span class="mine">blue</span>.</p>
   </section>
@@ -229,7 +231,8 @@ function fmtLen(l){if(l.v==null)return'<span class="muted">—</span>';const t=l
   if(l.src==='mine')return`<span class="mine" title="Your length">${t}</span>`;
   if(l.src==='otb?')return`<span class="est" title="Over-the-barrel can with no published added length; this is overall length">${t}?</span>`;
   return t}
-const bar=s=>s==null?'<span class="mbar"></span>':`<span class="mbar" title="${Math.round(s)} of 100 in this field"><i style="width:${Math.max(3,s).toFixed(0)}%"></i></span>`;
+// bar length follows the raw number within the field (longer = louder, heavier, longer, pricier); color shows good to bad
+const bar=s=>s==null?'<span class="mbar"></span>':`<span class="mbar" title="Scores ${Math.round(s)} of 100 in this field (100 is best)"><i class="${s>=67?'':s>=33?'mid':'bad'}" style="width:${Math.max(4,100-s).toFixed(0)}%"></i></span>`;
 const metric=(txt,s)=>`<span class="metric"><span>${txt}</span>${bar(s)}</span>`;
 
 const COLS=[
