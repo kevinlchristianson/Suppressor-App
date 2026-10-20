@@ -29,7 +29,7 @@ for y,f in [(2025,'summit2025_all.csv'),(2026,'summit2026_all.csv')]:
         if len(r)<27: continue
         num=lambda i: float(r[i]) if r[i].strip() else None
         q=round((num(7)+num(13))/2,2); e=num(19)
-        imp=round((num(10)+num(16))/2,2) if r[10].strip() and r[16].strip() else None
+        imp=round((num(9)+num(15))/2,2) if r[9].strip() and r[15].strip() else None  # Im-dB (cols: PkPr,dB,dB(A),Im-Pa,Im-dB,Pk Leq)
         if r[1]=='Bare':
             bare.append({'y':y,'h':r[4],'q':q,'e':e,'n':r[2]}); continue
         m=mf(r[1]); s=r[2].strip()
