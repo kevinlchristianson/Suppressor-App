@@ -92,6 +92,12 @@ tr.saved td{background:var(--row-hi)}
 .edit:hover{border-bottom-color:var(--ink-3)}
 td input[type=number]{width:84px;padding:3px 6px;text-align:right}
 .saved-list{display:grid;gap:10px}
+td.can .note{font-size:12px;color:var(--ink-2);font-style:italic;margin-top:2px}
+tr.noterow td{background:var(--row-hi);text-align:left;white-space:normal}
+.noteform{display:flex;flex-wrap:wrap;gap:8px;align-items:center;position:sticky;left:10px;max-width:min(560px,calc(100vw - 64px))}
+.noteform input,.svnote{font:inherit;color:var(--ink);background:var(--panel);border:1px solid var(--rule);border-radius:6px;padding:6px 10px;flex:1 1 220px;min-width:0}
+.svnote{width:100%}
+th .svwrap{display:grid;gap:6px;text-transform:none;letter-spacing:0;font-weight:400;font-size:13px;color:var(--ink);white-space:normal}
 .empty{color:var(--ink-3);padding:20px 12px;text-align:center}
 .io{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 textarea{width:100%;min-height:80px;font-family:var(--f-mono);font-size:12px}
@@ -108,7 +114,7 @@ footer p{margin:0}
 <div class="wrap">
   <header>
     <h1>Suppressor Bench</h1>
-    <p>Every can from the 2025 and 2026 TBAC Silencer Summits, with price, weight, length past the muzzle and sound side by side. Sound is only comparable on the same host and bore, so pick one, set what matters to you, and star the cans you want to keep.</p>
+    <p>Every can from the 2025 and 2026 TBAC Silencer Summits, with price, weight, length past the muzzle and sound side by side. Sound is only comparable on the same host and bore, so pick one, set what matters to you, and star the cans you want to keep, with a note on why.</p>
   </header>
 
   <div class="controls" role="group" aria-label="Filters">
@@ -157,7 +163,7 @@ footer p{margin:0}
       <textarea id="importText"></textarea>
       <div class="io"><button type="button" class="btn primary" id="doImport">Restore</button><span class="hint" id="importMsg"></span></div>
     </div>
-    <p class="hint">Stars, weights and your own numbers stay in this browser. Copy a backup to move them to another device.</p>
+    <p class="hint">Stars, notes, weights and your own numbers stay in this browser. The share link carries your stars and notes; copy a backup to move everything to another device.</p>
   </section>
 
   <footer>
@@ -179,11 +185,11 @@ const LS='suppressor-bench-v1';
 const $=id=>document.getElementById(id);
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const canKey=r=>r.m+'|'+r.s;
-let st={yr:'both',cat:'.300BO-16BA|.30',q:'',onlySaved:false,onlyPriced:false,w:{q:50,w:50,l:0,p:0},sort:{k:'score',dir:'desc'},saved:[],price:{},len:{}};
+let st={yr:'both',cat:'.300BO-16BA|.30',q:'',onlySaved:false,onlyPriced:false,w:{q:50,w:50,l:0,p:0},sort:{k:'score',dir:'desc'},saved:[],notes:{},price:{},len:{}};
 try{const s=JSON.parse(localStorage.getItem(LS)||'null');if(s)st=Object.assign(st,s,{q:''});}catch(e){}
 // shared link: ?saved=key1~key2 (GitHub Pages) or #saved:... is not used; query string only
-try{const u=new URL(location.href);const sv=u.searchParams.get('saved');if(sv){const add=sv.split('~').map(decodeURIComponent).filter(k=>RAW.rows.some(r=>canKey(r)===k));st.saved=[...new Set([...st.saved,...add])];}}catch(e){}
-const save=()=>{try{localStorage.setItem(LS,JSON.stringify({yr:st.yr,cat:st.cat,onlySaved:st.onlySaved,onlyPriced:st.onlyPriced,w:st.w,sort:st.sort,saved:st.saved,price:st.price,len:st.len}))}catch(e){}};
+try{const u=new URL(location.href);const sv=u.searchParams.get('saved');if(sv){const add=sv.split('~').map(decodeURIComponent).filter(k=>RAW.rows.some(r=>canKey(r)===k));st.saved=[...new Set([...st.saved,...add])];const n=u.searchParams.get('notes');if(n){const o=JSON.parse(n);for(const k in o)if(add.includes(k)&&!st.notes[k])st.notes[k]=String(o[k]).slice(0,200)}}}catch(e){}
+const save=()=>{try{localStorage.setItem(LS,JSON.stringify({yr:st.yr,cat:st.cat,onlySaved:st.onlySaved,onlyPriced:st.onlyPriced,w:st.w,sort:st.sort,saved:st.saved,notes:st.notes,price:st.price,len:st.len}))}catch(e){}};
 function toast(t){const el=$('toast');el.textContent=t;el.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>el.hidden=true,1800)}
 
 // effective values with the viewer's overrides
@@ -245,7 +251,7 @@ const COLS=[
   {k:'host',t:'Host · year',cls:'l'}];
 const val={can:x=>(x.r.m+' '+x.r.s).toLowerCase(),score:x=>x.score,q:x=>x.q,e:x=>x.e,w:x=>x.w,l:x=>x.l.v,p:x=>x.p.v,d:x=>x.r.d,host:x=>x.r.h+x.r.y};
 
-let editing=null;
+let editing=null,noteOpen=null;
 function render(){
   buildCatSelect();
   ['q','w','l','p'].forEach(m=>{$('w-'+m).value=st.w[m];});
@@ -282,8 +288,8 @@ function render(){
   const head='<thead><tr>'+COLS.map(c=>`<th class="${c.cls||''}" scope="col">${c.nosort?c.t:`<button type="button" data-k="${c.k}"${st.sort.k===c.k?` data-dir="${st.sort.dir}"`:''}>${c.t}</button>`}</th>`).join('')+'</tr></thead>';
   const body=list.length?list.map(x=>{const r=x.r,key=canKey(r),sv=st.saved.includes(key),id=esc(key);
     const pe=editing&&editing.key===key&&editing.f==='p',le=editing&&editing.key===key&&editing.f==='l';
-    return`<tr class="${sv?'saved':''}">
-<td class="l can sticky"><button type="button" class="star" data-star="${id}" aria-pressed="${sv}" aria-label="${sv?'Unstar':'Star'} ${esc(r.m+' '+r.s)}">${sv?'★':'☆'}</button><div><div class="mf">${esc(r.m)}</div><div class="md">${esc(r.s)}${r.otb?'<span class="tag otb" title="Over the barrel">OTB</span>':''}${r.dc?'<span class="tag" title="Discontinued per whichcan.com">disc.</span>':''}</div></div></td>
+    return`<tr class="${sv?'saved':''}" data-rid="${esc(key+'|'+r.y+'|'+r.h)}">
+<td class="l can sticky"><button type="button" class="star" data-star="${id}" aria-pressed="${sv}" aria-label="${sv?'Unstar':'Star'} ${esc(r.m+' '+r.s)}">${sv?'★':'☆'}</button><div><div class="mf">${esc(r.m)}</div><div class="md">${esc(r.s)}${r.otb?'<span class="tag otb" title="Over the barrel">OTB</span>':''}${r.dc?'<span class="tag" title="Discontinued per whichcan.com">disc.</span>':''}</div>${sv&&st.notes[key]?`<div class="note">${esc(st.notes[key])}</div>`:''}</div></td>
 <td>${x.score!=null?`<span class="score">${x.score.toFixed(0)}</span> <span class="rank">#${x.rank}</span>`:'<span class="muted">—</span>'}</td>
 <td>${metric(x.q.toFixed(1),x.s.q)}</td>
 <td>${x.e!=null?x.e.toFixed(1):'—'}</td>
@@ -291,9 +297,10 @@ function render(){
 <td>${le?`<input type="number" step="0.05" min="0" data-in="l" data-key="${id}" value="${x.l.v??''}" aria-label="Length past muzzle, inches">`:metric(`<button type="button" class="edit" data-ed="l" data-key="${id}">${fmtLen(x.l)}</button>`,x.s.l)}</td>
 <td>${pe?`<input type="number" step="1" min="0" data-in="p" data-key="${id}" value="${x.p.v!=null?Math.round(x.p.v):''}" aria-label="Price, dollars">`:metric(`<button type="button" class="edit" data-ed="p" data-key="${id}">${fmtPrice(x.p)}</button>`,x.s.p)}</td>
 <td>${r.d!=null?r.d.toFixed(2):'—'}</td>
-<td class="l"><span class="muted">${esc(hostName(r.h))} · ${esc(r.b)} · ${r.y}</span></td></tr>`}).join(''):`<tr><td colspan="${COLS.length}" class="empty">No cans match. Clear the search or the Starred and Priced filters.</td></tr>`;
+<td class="l"><span class="muted">${esc(hostName(r.h))} · ${esc(r.b)} · ${r.y}</span></td></tr>${noteOpen&&noteOpen.key===key&&noteOpen.rid===(key+'|'+r.y+'|'+r.h)?`<tr class="noterow"><td colspan="${COLS.length}"><div class="noteform"><label class="lbl" for="noteInput">Why this can?</label><input id="noteInput" data-note="${id}" maxlength="200" placeholder="e.g. Dirt cheap 9mm PCC can" value="${esc(st.notes[key]||'')}"><button type="button" class="btn primary" data-notedone>Save note</button><button type="button" class="btn" data-notedone>Skip</button></div></td></tr>`:''}`}).join(''):`<tr><td colspan="${COLS.length}" class="empty">No cans match. Clear the search or the Starred and Priced filters.</td></tr>`;
   $('tbl').innerHTML=head+'<tbody>'+body+'</tbody>';
   const inp=document.querySelector('#tbl input[data-in]');if(inp){inp.focus();inp.select()}
+  const ni=$('noteInput');if(ni&&noteOpen&&noteOpen.focus){noteOpen.focus=false;ni.focus()}
   renderSaved(rows);save();
 }
 
@@ -305,13 +312,15 @@ function renderSaved(rows){
     const r0=tests[0];const sc=rows.filter(x=>canKey(x.r)===key);
     const p=price(r0),l=length(r0);
     const lines=sc.length?sc.sort((a,b)=>a.q-b.q).map(x=>`<tr><td class="l">${esc(hostName(x.r.h))} · ${esc(x.r.b)} · ${x.r.y}</td><td>${x.q.toFixed(1)}</td><td>${x.e!=null?x.e.toFixed(1):'—'}</td><td>${x.score!=null?x.score.toFixed(0)+' <span class="rank">#'+x.rank+' of '+x.n+'</span>':'—'}</td></tr>`).join(''):`<tr><td class="l muted" colspan="4">Not tested in the selected year</td></tr>`;
-    return`<div class="tblwrap"><table><thead><tr><th class="l" scope="col"><button type="button" class="star" data-star="${esc(key)}" aria-pressed="true" aria-label="Unstar">★</button> ${esc(r0.m)} ${esc(r0.s)}${r0.otb?'<span class="tag otb">OTB</span>':''} <span class="muted" style="text-transform:none;letter-spacing:0;font-weight:400">· ${r0.w!=null?r0.w.toFixed(1)+' oz':''} · ${l.v!=null?l.v.toFixed(2)+' in':''} · ${p.v!=null?'$'+Math.round(p.v).toLocaleString('en-US'):'no price'}</span></th><th scope="col">Sound</th><th scope="col">Ear</th><th scope="col">Score</th></tr></thead><tbody>${lines}</tbody></table></div>`}).join('');
+    return`<div class="tblwrap"><table><thead><tr><th class="l" scope="col"><button type="button" class="star" data-star="${esc(key)}" aria-pressed="true" aria-label="Unstar">★</button> ${esc(r0.m)} ${esc(r0.s)}${r0.otb?'<span class="tag otb">OTB</span>':''} <span class="muted" style="text-transform:none;letter-spacing:0;font-weight:400">· ${r0.w!=null?r0.w.toFixed(1)+' oz':''} · ${l.v!=null?l.v.toFixed(2)+' in':''} · ${p.v!=null?'$'+Math.round(p.v).toLocaleString('en-US'):'no price'}</span><div class="svwrap"><label class="lbl" for="sn-${esc(key)}">Why this can?</label><input class="svnote" id="sn-${esc(key)}" data-svnote="${esc(key)}" maxlength="200" placeholder="e.g. Dirt cheap 9mm PCC can" value="${esc(st.notes[key]||'')}"></div></th><th scope="col">Sound</th><th scope="col">Ear</th><th scope="col">Score</th></tr></thead><tbody>${lines}</tbody></table></div>`}).join('');
   $('saved').innerHTML=out;
 }
 
 // events
 document.addEventListener('click',e=>{
-  const s=e.target.closest('[data-star]');if(s){const k=s.dataset.star;st.saved=st.saved.includes(k)?st.saved.filter(x=>x!==k):[...st.saved,k];render();return}
+  const s=e.target.closest('[data-star]');if(s){const k=s.dataset.star;const on=!st.saved.includes(k);st.saved=on?[...st.saved,k]:st.saved.filter(x=>x!==k);
+    const tr=s.closest('#tbl tr');noteOpen=on&&tr?{key:k,rid:tr.dataset.rid,focus:true}:null;render();return}
+  if(e.target.closest('[data-notedone]')){noteOpen=null;render();return}
   const ed=e.target.closest('[data-ed]');if(ed){editing={key:ed.dataset.key,f:ed.dataset.ed};render();return}
   const th=e.target.closest('th button[data-k]');if(th){const k=th.dataset.k;const c=COLS.find(c=>c.k===k);st.sort=st.sort.k===k?{k,dir:st.sort.dir==='asc'?'desc':'asc'}:{k,dir:c.def||'asc'};render();return}
   const y=e.target.closest('#yr button');if(y){st.yr=y.dataset.v;render();return}
@@ -321,6 +330,9 @@ function commit(inp){const k=inp.dataset.key,f=inp.dataset.in,v=inp.value.trim()
 document.addEventListener('keydown',e=>{const inp=e.target.closest&&e.target.closest('input[data-in]');if(!inp)return;
   if(e.key==='Enter'){e.preventDefault();commit(inp)}else if(e.key==='Escape'){editing=null;render()}});
 document.addEventListener('focusout',e=>{const inp=e.target.closest&&e.target.closest('input[data-in]');if(inp&&editing)commit(inp)});
+document.addEventListener('input',e=>{const t=e.target;const k=t.dataset&&(t.dataset.note||t.dataset.svnote);if(!k)return;const v=t.value.trim();if(v)st.notes[k]=v;else delete st.notes[k];save()});
+document.addEventListener('change',e=>{if(e.target.dataset&&e.target.dataset.svnote)render()});
+document.addEventListener('keydown',e=>{if(e.target.id==='noteInput'&&(e.key==='Enter'||e.key==='Escape')){e.preventDefault();noteOpen=null;render()}});
 $('cat').addEventListener('change',e=>{st.cat=e.target.value;render()});
 $('q').addEventListener('input',e=>{st.q=e.target.value;render()});
 $('onlySaved').addEventListener('change',e=>{st.onlySaved=e.target.checked;render()});
@@ -330,11 +342,11 @@ $('wreset').addEventListener('click',()=>{st.w={q:50,w:50,l:0,p:0};render()});
 function copy(text,msg){const done=()=>toast(msg);try{navigator.clipboard.writeText(text).then(done,()=>fallback())}catch(e){fallback()}
   function fallback(){$('importBox').hidden=false;$('importText').value=text;$('importText').select();$('importMsg').textContent='Copy this text with your keyboard.'}}
 $('copyLink').addEventListener('click',()=>{if(!st.saved.length){toast('Star a can first');return}
-  const u=new URL(location.href);u.hash='';u.search='?saved='+st.saved.map(encodeURIComponent).join('~');copy(u.toString(),'Share link copied')});
-$('copyJson').addEventListener('click',()=>copy(JSON.stringify({saved:st.saved,price:st.price,len:st.len,w:st.w}),'Backup copied'));
+  const u=new URL(location.href);u.hash='';u.search='?saved='+st.saved.map(encodeURIComponent).join('~');const nn={};st.saved.forEach(k=>{if(st.notes[k])nn[k]=st.notes[k]});if(Object.keys(nn).length)u.searchParams.set('notes',JSON.stringify(nn));copy(u.toString(),'Share link copied')});
+$('copyJson').addEventListener('click',()=>copy(JSON.stringify({saved:st.saved,notes:st.notes,price:st.price,len:st.len,w:st.w}),'Backup copied'));
 $('showImport').addEventListener('click',()=>{$('importBox').hidden=!$('importBox').hidden;$('importMsg').textContent=''});
 $('doImport').addEventListener('click',()=>{try{const o=JSON.parse($('importText').value);
-  if(Array.isArray(o.saved))st.saved=[...new Set([...st.saved,...o.saved])];if(o.price)Object.assign(st.price,o.price);if(o.len)Object.assign(st.len,o.len);if(o.w)st.w=o.w;
+  if(Array.isArray(o.saved))st.saved=[...new Set([...st.saved,...o.saved])];if(o.notes)Object.assign(st.notes,o.notes);if(o.price)Object.assign(st.price,o.price);if(o.len)Object.assign(st.len,o.len);if(o.w)st.w=o.w;
   $('importBox').hidden=true;$('importText').value='';render();toast('Backup restored')}catch(e){$('importMsg').textContent='That text is not a backup from this page. Copy it again with "Copy backup".'}});
 $('clearSaved').addEventListener('click',e=>{const b=e.currentTarget;if(b.dataset.armed){st.saved=[];delete b.dataset.armed;b.textContent='Clear stars';render();return}
   b.dataset.armed=1;b.textContent='Click again to clear';setTimeout(()=>{delete b.dataset.armed;b.textContent='Clear stars'},3000)});
