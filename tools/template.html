@@ -122,12 +122,12 @@ footer p{margin:0}
   <section class="panel" aria-labelledby="wt-h">
     <div class="wthead"><h2 id="wt-h">What matters to you</h2><button type="button" class="btn" id="wreset">Reset to 50/50 sound and weight</button></div>
     <div class="weights">
-      <div class="wt"><div class="top"><label class="lbl" for="w-q">Sound</label><output id="o-q"></output></div><input type="range" id="w-q" min="0" max="100" step="5"></div>
-      <div class="wt"><div class="top"><label class="lbl" for="w-w">Weight</label><output id="o-w"></output></div><input type="range" id="w-w" min="0" max="100" step="5"></div>
-      <div class="wt"><div class="top"><label class="lbl" for="w-l">Length past muzzle</label><output id="o-l"></output></div><input type="range" id="w-l" min="0" max="100" step="5"></div>
-      <div class="wt"><div class="top"><label class="lbl" for="w-p">Price</label><output id="o-p"></output></div><input type="range" id="w-p" min="0" max="100" step="5"></div>
+      <div class="wt"><div class="top"><label class="lbl" for="w-q">Sound</label><output id="o-q"></output></div><input type="range" id="w-q" min="0" max="100" step="1"></div>
+      <div class="wt"><div class="top"><label class="lbl" for="w-w">Weight</label><output id="o-w"></output></div><input type="range" id="w-w" min="0" max="100" step="1"></div>
+      <div class="wt"><div class="top"><label class="lbl" for="w-l">Length past muzzle</label><output id="o-l"></output></div><input type="range" id="w-l" min="0" max="100" step="1"></div>
+      <div class="wt"><div class="top"><label class="lbl" for="w-p">Price</label><output id="o-p"></output></div><input type="range" id="w-p" min="0" max="100" step="1"></div>
     </div>
-    <p class="hint" style="margin-top:12px">Each can gets 0–100 per measure against the other cans in the same host and bore (100 is the quietest, lightest, shortest or cheapest). The score is the weighted average. A can missing a measure you weight (usually price) gets no score.</p>
+    <p class="hint" style="margin-top:12px">The four sliders always add up to 100%, and moving one sorts the results by score. Each can gets 0–100 per measure against the other cans in the same host and bore (100 is the quietest, lightest, shortest or cheapest). The score is the weighted average. A can missing a measure you weight (usually price) gets no score.</p>
   </section>
 
   <section style="display:grid;gap:10px" aria-labelledby="ld-h">
@@ -248,7 +248,7 @@ function render(){
   buildCatSelect();
   ['q','w','l','p'].forEach(m=>{$('w-'+m).value=st.w[m];});
   const tot=st.w.q+st.w.w+st.w.l+st.w.p;
-  ['q','w','l','p'].forEach(m=>{$('o-'+m).textContent=tot?Math.round(st.w[m]/tot*100)+'%':'off'});
+  ['q','w','l','p'].forEach(m=>{$('o-'+m).textContent=st.w[m]+'%'});
   document.querySelectorAll('#yr button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===st.yr));
   $('onlySaved').checked=st.onlySaved;$('onlyPriced').checked=st.onlyPriced;
   const {rows,groups}=scored();
@@ -329,8 +329,18 @@ $('cat').addEventListener('change',e=>{st.cat=e.target.value;render()});
 $('q').addEventListener('input',e=>{st.q=e.target.value;render()});
 $('onlySaved').addEventListener('change',e=>{st.onlySaved=e.target.checked;render()});
 $('onlyPriced').addEventListener('change',e=>{st.onlyPriced=e.target.checked;render()});
-['q','w','l','p'].forEach(m=>$('w-'+m).addEventListener('input',e=>{st.w[m]=+e.target.value;render()}));
-$('wreset').addEventListener('click',()=>{st.w={q:50,w:50,l:0,p:0};render()});
+// sliders are linked: they always add up to 100%. Moving one shares the rest among the others in their current proportions.
+function setWeight(m,v){v=Math.max(0,Math.min(100,Math.round(v)));const others=['q','w','l','p'].filter(k=>k!==m);
+  const prev=others.reduce((s,k)=>s+(st.w[k]||0),0),rest=100-v;
+  const raw=others.map(k=>prev>0?(st.w[k]||0)/prev*rest:rest/others.length);
+  const fl=raw.map(Math.floor);let left=rest-fl.reduce((a,b)=>a+b,0);
+  raw.map((x,i)=>[x-fl[i],i]).sort((a,b)=>b[0]-a[0]).forEach(([,i])=>{if(left>0){fl[i]++;left--}});
+  st.w[m]=v;others.forEach((k,i)=>st.w[k]=fl[i])}
+function normWeights(){const t=['q','w','l','p'].reduce((s,k)=>s+(+st.w[k]||0),0);if(t===100)return;
+  if(!t){st.w={q:50,w:50,l:0,p:0};return}const q=st.w.q;st.w.q=(+q||0)/t*100;setWeight('q',st.w.q)}
+normWeights();
+['q','w','l','p'].forEach(m=>$('w-'+m).addEventListener('input',e=>{setWeight(m,+e.target.value);st.sort={k:'score',dir:'desc'};render()}));
+$('wreset').addEventListener('click',()=>{st.w={q:50,w:50,l:0,p:0};st.sort={k:'score',dir:'desc'};render()});
 function copy(text,msg){const done=()=>toast(msg);try{navigator.clipboard.writeText(text).then(done,()=>fallback())}catch(e){fallback()}
   function fallback(){$('importBox').hidden=false;$('importText').value=text;$('importText').select();$('importMsg').textContent='Copy this text with your keyboard.'}}
 $('copyLink').addEventListener('click',()=>{if(!st.saved.length){toast('Star a can first');return}
@@ -338,7 +348,7 @@ $('copyLink').addEventListener('click',()=>{if(!st.saved.length){toast('Star a c
 $('copyJson').addEventListener('click',()=>copy(JSON.stringify({saved:st.saved,notes:st.notes,price:st.price,len:st.len,w:st.w}),'Backup copied'));
 $('showImport').addEventListener('click',()=>{$('importBox').hidden=!$('importBox').hidden;$('importMsg').textContent=''});
 $('doImport').addEventListener('click',()=>{try{const o=JSON.parse($('importText').value);
-  if(Array.isArray(o.saved))st.saved=[...new Set([...st.saved,...o.saved])];if(o.notes)Object.assign(st.notes,o.notes);if(o.price)Object.assign(st.price,o.price);if(o.len)Object.assign(st.len,o.len);if(o.w)st.w=o.w;
+  if(Array.isArray(o.saved))st.saved=[...new Set([...st.saved,...o.saved])];if(o.notes)Object.assign(st.notes,o.notes);if(o.price)Object.assign(st.price,o.price);if(o.len)Object.assign(st.len,o.len);if(o.w){st.w=o.w;normWeights()}
   $('importBox').hidden=true;$('importText').value='';render();toast('Backup restored')}catch(e){$('importMsg').textContent='That text is not a backup from this page. Copy it again with "Copy backup".'}});
 $('clearSaved').addEventListener('click',e=>{const b=e.currentTarget;if(b.dataset.armed){st.saved=[];delete b.dataset.armed;b.textContent='Clear stars';render();return}
   b.dataset.armed=1;b.textContent='Click again to clear';setTimeout(()=>{delete b.dataset.armed;b.textContent='Clear stars'},3000)});
