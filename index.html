@@ -40,6 +40,14 @@ input[type=search]{width:200px}
 .seg{display:inline-flex;border:1px solid var(--rule);border-radius:6px;overflow:hidden;background:var(--panel)}
 .seg button{font:inherit;border:0;background:transparent;color:var(--ink-2);padding:7px 12px;cursor:pointer}
 .seg button[aria-pressed="true"]{background:var(--chip);color:var(--ink);font-weight:600}
+.picker{position:relative}
+.picker summary{list-style:none;cursor:pointer;background:var(--panel);border:1px solid var(--rule);border-radius:6px;padding:7px 30px 7px 10px;min-width:240px;max-width:100%;position:relative;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.picker summary::-webkit-details-marker{display:none}
+.picker summary::after{content:"▾";position:absolute;right:10px;color:var(--ink-3)}
+.picker .pop{position:absolute;z-index:20;top:calc(100% + 4px);left:0;width:min(380px,calc(100vw - 32px));background:var(--panel);border:1px solid var(--rule);border-radius:8px;padding:10px;display:grid;gap:8px;box-shadow:0 8px 24px rgba(0,0,0,.18)}
+.optlist{display:grid;gap:2px;max-height:min(360px,55vh);overflow:auto}
+.opt{display:grid;grid-template-columns:auto 1fr auto;gap:8px;align-items:center;padding:5px 4px;border-radius:4px;cursor:pointer}
+.opt:hover{background:var(--chip)}
 .check{display:inline-flex;gap:6px;align-items:center;color:var(--ink-2);padding:7px 0;cursor:pointer}
 .btn{font:inherit;font-size:13px;border:1px solid var(--rule);background:var(--panel);color:var(--ink);border-radius:6px;padding:6px 11px;cursor:pointer}
 .btn:hover{border-color:var(--ink-3)}
@@ -106,7 +114,7 @@ textarea{width:100%;min-height:80px;font-family:var(--f-mono);font-size:12px}
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:8px 14px;border-radius:6px;font-size:13px;z-index:30}
 footer{color:var(--ink-3);font-size:12.5px;max-width:90ch;display:grid;gap:6px}
 footer p{margin:0}
-@media (max-width:600px){td.can{min-width:150px;max-width:170px} header h1{font-size:32px} input[type=search]{width:100%} .controls .field{flex:1 1 140px}}
+@media (max-width:600px){.controls .field.catf{flex-basis:100%} .picker summary{min-width:0;width:100%} .picker .pop{position:static;width:auto;box-shadow:none;margin-top:4px} td.can{min-width:150px;max-width:170px} header h1{font-size:32px} input[type=search]{width:100%} .controls .field{flex:1 1 140px}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 </head>
@@ -116,14 +124,14 @@ footer p{margin:0}
 <div class="wrap">
   <header>
     <h1>Suppressor Bench</h1>
-    <p>Every can from the 2025 and 2026 TBAC Silencer Summits, with price, weight, length past the muzzle and sound side by side. Sound is only comparable on the same host and bore, so pick one, set what matters to you, and star the cans you want to keep, with a note on why.</p>
+    <p>Every can from the 2025 and 2026 TBAC Silencer Summits, with price, weight, length past the muzzle and sound side by side. Sound compares fairly only on the same host and bore, so pick the hosts you care about, set what matters to you, and star the cans you want to keep, with a note on why.</p>
   </header>
 
   <div class="controls" role="group" aria-label="Filters">
     <div class="field"><span class="lbl" id="yr-l">Summit year</span>
       <div class="seg" id="yr" role="group" aria-labelledby="yr-l">
         <button type="button" data-v="both" aria-pressed="true">2025 + 2026</button><button type="button" data-v="2026" aria-pressed="false">2026</button><button type="button" data-v="2025" aria-pressed="false">2025</button></div></div>
-    <div class="field"><label for="cat">Host and bore</label><select id="cat"></select></div>
+    <div class="field catf"><span class="lbl" id="cat-l">Host and bore</span><details class="picker" id="picker"><summary aria-labelledby="cat-l catSum"><span id="catSum"></span></summary><div class="pop"><div class="io"><button type="button" class="btn" data-catall>Select all</button><button type="button" class="btn" data-catnone>Clear</button><button type="button" class="btn primary" data-catdone>Done</button></div><div id="catList" class="optlist"></div></div></details></div>
     <div class="field"><label for="q">Find a can</label><input type="search" id="q" placeholder="Maker or model"></div>
     <label class="check"><input type="checkbox" id="onlySaved"> Starred only</label>
     <label class="check"><input type="checkbox" id="onlyPriced"> Priced only</label>
@@ -137,7 +145,7 @@ footer p{margin:0}
       <div class="wt"><div class="top"><label class="lbl" for="w-l">Length past muzzle</label><output id="o-l"></output></div><input type="range" id="w-l" min="0" max="100" step="1"></div>
       <div class="wt"><div class="top"><label class="lbl" for="w-p">Price</label><output id="o-p"></output></div><input type="range" id="w-p" min="0" max="100" step="1"></div>
     </div>
-    <p class="hint" style="margin-top:12px">The four sliders always add up to 100%, and moving one sorts the results by score. Each can gets 0–100 per measure against the other cans in the same host and bore (or against every can when All hosts is selected) (100 is the quietest, lightest, shortest or cheapest). The score is the weighted average. A can missing a measure you weight (usually price) gets no score.</p>
+    <p class="hint" style="margin-top:12px">The four sliders always add up to 100%, and moving one sorts the results by score. Each can gets 0–100 per measure against every other can in the hosts and bores you picked (100 is the quietest, lightest, shortest or cheapest). The score is the weighted average. A can missing a measure you weight (usually price) gets no score.</p>
   </section>
 
   <section style="display:grid;gap:10px" aria-labelledby="ld-h">
@@ -188,11 +196,11 @@ const LS='suppressor-bench-v1';
 const $=id=>document.getElementById(id);
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const canKey=r=>r.m+'|'+r.s;
-let st={yr:'both',cat:'.300BO-16BA|.30',q:'',onlySaved:false,onlyPriced:false,w:{q:50,w:50,l:0,p:0},sort:{k:'score',dir:'desc'},saved:[],notes:{},price:{},len:{}};
-try{const s=JSON.parse(localStorage.getItem(LS)||'null');if(s)st=Object.assign(st,s,{q:''});}catch(e){}
+let st={yr:'both',cats:['.300BO-16BA|.30'],q:'',onlySaved:false,onlyPriced:false,w:{q:50,w:50,l:0,p:0},sort:{k:'score',dir:'desc'},saved:[],notes:{},price:{},len:{}};
+try{const s=JSON.parse(localStorage.getItem(LS)||'null');if(s){if(s.cat&&!s.cats){s.cats=s.cat==='all'?null:[s.cat];delete s.cat;if(!s.cats)s.cats=[...new Set(RAW.rows.map(r=>r.h+'|'+r.b))]}st=Object.assign(st,s,{q:''});}}catch(e){}
 // shared link: ?saved=key1~key2 (GitHub Pages) or #saved:... is not used; query string only
 try{const u=new URL(location.href);const sv=u.searchParams.get('saved');if(sv){const add=sv.split('~').map(decodeURIComponent).filter(k=>RAW.rows.some(r=>canKey(r)===k));st.saved=[...new Set([...st.saved,...add])];const n=u.searchParams.get('notes');if(n){const o=JSON.parse(n);for(const k in o)if(add.includes(k)&&!st.notes[k])st.notes[k]=String(o[k]).slice(0,200)}}}catch(e){}
-const save=()=>{try{localStorage.setItem(LS,JSON.stringify({yr:st.yr,cat:st.cat,onlySaved:st.onlySaved,onlyPriced:st.onlyPriced,w:st.w,sort:st.sort,saved:st.saved,notes:st.notes,price:st.price,len:st.len}))}catch(e){}};
+const save=()=>{try{localStorage.setItem(LS,JSON.stringify({yr:st.yr,cats:st.cats,onlySaved:st.onlySaved,onlyPriced:st.onlyPriced,w:st.w,sort:st.sort,saved:st.saved,notes:st.notes,price:st.price,len:st.len}))}catch(e){}};
 function toast(t){const el=$('toast');el.textContent=t;el.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>el.hidden=true,1800)}
 
 // effective values with the viewer's overrides
@@ -202,20 +210,27 @@ function length(r){const o=st.len[canKey(r)];if(o!=null)return{v:o,src:'mine'};i
 function inYear(r){return st.yr==='both'||String(r.y)===st.yr}
 function cats(){const m=new Map();RAW.rows.filter(inYear).forEach(r=>{const k=r.h+'|'+r.b;m.set(k,(m.get(k)||0)+1)});return m}
 
-function buildCatSelect(){
-  const m=cats();const sel=$('cat');
-  const opts=[...m.entries()].sort((a,b)=>b[1]-a[1]);
-  if(!m.has(st.cat)&&st.cat!=='all')st.cat=opts[0][0];
-  const main=opts.filter(o=>o[1]>=3),few=opts.filter(o=>o[1]<3);
-  const opt=([k,n])=>{const[h,b]=k.split('|');return`<option value="${esc(k)}">${esc(hostName(h))} · ${esc(b)} cans (${n})</option>`};
-  sel.innerHTML=`<option value="all">All hosts and bores</option>`+main.map(opt).join('')+(few.length?`<optgroup label="Fewer than 3 cans">${few.map(opt).join('')}</optgroup>`:'');
-  sel.value=st.cat;
+// host × bore picker: any mix of fields; the selected fields are scored together on one scale
+let pickerYr=null;
+const catLabel=k=>{const[h,b]=k.split('|');return`${hostName(h)} · ${b} cans`};
+function selected(){return new Set(st.cats)}
+function buildCatPicker(){
+  const m=cats();st.cats=st.cats.filter(k=>m.has(k));
+  if(!st.cats.length)st.cats=[[...m.entries()].sort((a,b)=>b[1]-a[1])[0][0]];
+  if(pickerYr!==st.yr){pickerYr=st.yr;
+    const opts=[...m.entries()].sort((a,b)=>b[1]-a[1]);
+    const box=([k,n])=>`<label class="opt"><input type="checkbox" data-cat="${esc(k)}"> <span>${esc(catLabel(k))}</span><span class="muted">${n}</span></label>`;
+    const main=opts.filter(o=>o[1]>=3),few=opts.filter(o=>o[1]<3);
+    $('catList').innerHTML=main.map(box).join('')+(few.length?`<div class="lbl" style="margin-top:6px">Fewer than 3 cans</div>`+few.map(box).join(''):'');}
+  const s=selected();document.querySelectorAll('#catList input[data-cat]').forEach(i=>i.checked=s.has(i.dataset.cat));
+  const n=st.cats.length,total=m.size;
+  $('catSum').textContent=n===total?'All hosts and bores':n===1?catLabel(st.cats[0]):`${n} hosts and bores`;
 }
 
 // score each row within its host × bore field for the chosen years
 function scored(){
   const rows=RAW.rows.filter(inYear).map(r=>({r,q:r.q,e:r.e,w:r.w,l:length(r),p:price(r)}));
-  const groups=new Map();rows.forEach(x=>{const k=st.cat==='all'?'all':x.r.h+'|'+x.r.b;(groups.get(k)||groups.set(k,[]).get(k)).push(x)});
+  const sel=selected();const groups=new Map();rows.forEach(x=>{const fk=x.r.h+'|'+x.r.b;const k=sel.has(fk)?'sel':fk;(groups.get(k)||groups.set(k,[]).get(k)).push(x)});
   const W=st.w,tot=W.q+W.w+W.l+W.p;
   groups.forEach(g=>{
     const get={q:x=>x.q,w:x=>x.w,l:x=>x.l.v,p:x=>x.p.v};
@@ -258,15 +273,15 @@ const val={can:x=>(x.r.m+' '+x.r.s).toLowerCase(),score:x=>x.score,q:x=>x.q,e:x=
 let editing=null,noteOpen=null;
 var dragging=false;
 function render(){
-  buildCatSelect();
+  buildCatPicker();
   ['q','w','l','p'].forEach(m=>{const el=$('w-'+m);if(document.activeElement!==el||!dragging)el.value=st.w[m];});
   const tot=st.w.q+st.w.w+st.w.l+st.w.p;
   ['q','w','l','p'].forEach(m=>{$('o-'+m).textContent=st.w[m]+'%'});
   document.querySelectorAll('#yr button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===st.yr));
   $('onlySaved').checked=st.onlySaved;$('onlyPriced').checked=st.onlyPriced;
   const {rows,groups}=scored();
-  const all=st.cat==='all';
-  let list=all?rows:rows.filter(x=>x.r.h+'|'+x.r.b===st.cat);
+  const sel=selected(),one=st.cats.length===1;
+  let list=rows.filter(x=>sel.has(x.r.h+'|'+x.r.b));
   const field=list.slice();
   const q=st.q.trim().toLowerCase();
   if(q)list=list.filter(x=>(x.r.m+' '+x.r.s).toLowerCase().includes(q));
@@ -275,10 +290,9 @@ function render(){
   const f=val[st.sort.k]||val.score,d=st.sort.dir==='asc'?1:-1;
   list.sort((a,b)=>{const A=f(a),B=f(b);if(A==null&&B==null)return 0;if(A==null)return 1;if(B==null)return-1;return(A<B?-1:A>B?1:0)*d});
   // leaders
-  if(all){$('cat-title').textContent='All hosts and bores';$('leaders').innerHTML=`<div class="leader"><span class="k">Tip</span><span class="n">In this view every can is scored against every other can, so a .22 pistol can and a .300 Win Mag can share one scale. Sound only compares fairly on the same host and bore, so pick one above for real comparisons.</span></div>`}
-  else{
-    const[h,b]=st.cat.split('|');const bare=RAW.bare.filter(x=>x.h===h&&inYear(x));
-    $('cat-title').textContent=`${hostName(h)} with ${b} cans`;
+  {
+    const[h,b]=st.cats[0].split('|');const bare=one?RAW.bare.filter(x=>x.h===h&&inYear(x)):[];
+    $('cat-title').textContent=one?`${hostName(h)} with ${b} cans`:$('catSum').textContent;
     const best=(fn)=>{let m=null;field.forEach(x=>{const v=fn(x);if(v!=null&&(m==null||v<m.v))m={v,x}});return m};
     const lead=(k,m,fmt)=>`<div class="leader"><span class="k">${k}</span>${m?`<span class="v">${fmt(m.v)}</span><span class="n">${esc(m.x.r.m)} ${esc(m.x.r.s)} · ${m.x.r.y}</span>`:'<span class="n muted">No data</span>'}</div>`;
     const top=field.filter(x=>x.rank===1)[0];
@@ -286,9 +300,10 @@ function render(){
       `<div class="leader"><span class="k">Top score</span>${top?`<span class="v">${top.score.toFixed(0)}</span><span class="n">${esc(top.r.m)} ${esc(top.r.s)} · ${top.r.y}</span>`:'<span class="n muted">Set a weight above</span>'}</div>`+
       lead('Quietest',best(x=>x.q),v=>v.toFixed(1)+' dB')+lead('Lightest',best(x=>x.w),v=>v.toFixed(1)+' oz')+
       lead('Shortest past muzzle',best(x=>x.l.v),v=>v.toFixed(2)+' in')+lead('Cheapest',best(x=>x.p.v),v=>'$'+Math.round(v).toLocaleString('en-US'))+
-      (bare.length?`<div class="leader"><span class="k">Bare muzzle</span><span class="v">${(bare.reduce((s,x)=>s+x.q,0)/bare.length).toFixed(1)} dB</span><span class="n">Unsuppressed reference</span></div>`:'');
+      (bare.length?`<div class="leader"><span class="k">Bare muzzle</span><span class="v">${(bare.reduce((s,x)=>s+x.q,0)/bare.length).toFixed(1)} dB</span><span class="n">Unsuppressed reference</span></div>`:'')+
+      (one?'':`<div class="leader"><span class="k">Mixed hosts</span><span class="n">These cans are scored together on one scale. Sound from different hosts isn't a fair fight: a .22 pistol is always quieter than a .300 Win Mag.</span></div>`);
   }
-  $('count').textContent=`${list.length} of ${field.length} tests${all?'':' in this field'}`;
+  $('count').textContent=`${list.length} of ${field.length} tests`;
   // table
   const head='<thead><tr>'+COLS.map(c=>`<th class="${c.cls||''}" scope="col">${c.nosort?c.t:`<button type="button" data-k="${c.k}"${st.sort.k===c.k?` data-dir="${st.sort.dir}"`:''}>${c.t}</button>`}</th>`).join('')+'</tr></thead>';
   const body=list.length?list.map(x=>{const r=x.r,key=canKey(r),sv=st.saved.includes(key),id=esc(key);
@@ -338,7 +353,10 @@ document.addEventListener('focusout',e=>{const inp=e.target.closest&&e.target.cl
 document.addEventListener('input',e=>{const t=e.target;const k=t.dataset&&(t.dataset.note||t.dataset.svnote);if(!k)return;const v=t.value.trim();if(v)st.notes[k]=v;else delete st.notes[k];save()});
 document.addEventListener('change',e=>{if(e.target.dataset&&e.target.dataset.svnote)render()});
 document.addEventListener('keydown',e=>{if(e.target.id==='noteInput'&&(e.key==='Enter'||e.key==='Escape')){e.preventDefault();noteOpen=null;render()}});
-$('cat').addEventListener('change',e=>{st.cat=e.target.value;render()});
+$('catList').addEventListener('change',e=>{const k=e.target.dataset.cat;if(!k)return;st.cats=e.target.checked?[...new Set([...st.cats,k])]:st.cats.filter(x=>x!==k);if(!st.cats.length){st.cats=[k];e.target.checked=true}render()});
+$('picker').addEventListener('click',e=>{if(e.target.closest('[data-catall]')){st.cats=[...cats().keys()];render()}else if(e.target.closest('[data-catnone]')){st.cats=[st.cats[0]];render()}else if(e.target.closest('[data-catdone]'))$('picker').open=false});
+document.addEventListener('click',e=>{if($('picker').open&&!e.target.closest('#picker'))$('picker').open=false});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('picker').open){$('picker').open=false;$('picker').querySelector('summary').focus()}});
 $('q').addEventListener('input',e=>{st.q=e.target.value;render()});
 $('onlySaved').addEventListener('change',e=>{st.onlySaved=e.target.checked;render()});
 $('onlyPriced').addEventListener('change',e=>{st.onlyPriced=e.target.checked;render()});
