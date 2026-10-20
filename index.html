@@ -137,7 +137,7 @@ footer p{margin:0}
       <div class="wt"><div class="top"><label class="lbl" for="w-l">Length past muzzle</label><output id="o-l"></output></div><input type="range" id="w-l" min="0" max="100" step="1"></div>
       <div class="wt"><div class="top"><label class="lbl" for="w-p">Price</label><output id="o-p"></output></div><input type="range" id="w-p" min="0" max="100" step="1"></div>
     </div>
-    <p class="hint" style="margin-top:12px">The four sliders always add up to 100%, and moving one sorts the results by score. Each can gets 0–100 per measure against the other cans in the same host and bore (100 is the quietest, lightest, shortest or cheapest). The score is the weighted average. A can missing a measure you weight (usually price) gets no score.</p>
+    <p class="hint" style="margin-top:12px">The four sliders always add up to 100%, and moving one sorts the results by score. Each can gets 0–100 per measure against the other cans in the same host and bore (or against every can when All hosts is selected) (100 is the quietest, lightest, shortest or cheapest). The score is the weighted average. A can missing a measure you weight (usually price) gets no score.</p>
   </section>
 
   <section style="display:grid;gap:10px" aria-labelledby="ld-h">
@@ -215,7 +215,7 @@ function buildCatSelect(){
 // score each row within its host × bore field for the chosen years
 function scored(){
   const rows=RAW.rows.filter(inYear).map(r=>({r,q:r.q,e:r.e,w:r.w,l:length(r),p:price(r)}));
-  const groups=new Map();rows.forEach(x=>{const k=x.r.h+'|'+x.r.b;(groups.get(k)||groups.set(k,[]).get(k)).push(x)});
+  const groups=new Map();rows.forEach(x=>{const k=st.cat==='all'?'all':x.r.h+'|'+x.r.b;(groups.get(k)||groups.set(k,[]).get(k)).push(x)});
   const W=st.w,tot=W.q+W.w+W.l+W.p;
   groups.forEach(g=>{
     const get={q:x=>x.q,w:x=>x.w,l:x=>x.l.v,p:x=>x.p.v};
@@ -275,7 +275,7 @@ function render(){
   const f=val[st.sort.k]||val.score,d=st.sort.dir==='asc'?1:-1;
   list.sort((a,b)=>{const A=f(a),B=f(b);if(A==null&&B==null)return 0;if(A==null)return 1;if(B==null)return-1;return(A<B?-1:A>B?1:0)*d});
   // leaders
-  if(all){$('cat-title').textContent='All hosts and bores';$('leaders').innerHTML=`<div class="leader"><span class="k">Tip</span><span class="n">Scores are still worked out within each host and bore. Pick one above to see its leaders.</span></div>`}
+  if(all){$('cat-title').textContent='All hosts and bores';$('leaders').innerHTML=`<div class="leader"><span class="k">Tip</span><span class="n">In this view every can is scored against every other can, so a .22 pistol can and a .300 Win Mag can share one scale. Sound only compares fairly on the same host and bore, so pick one above for real comparisons.</span></div>`}
   else{
     const[h,b]=st.cat.split('|');const bare=RAW.bare.filter(x=>x.h===h&&inYear(x));
     $('cat-title').textContent=`${hostName(h)} with ${b} cans`;
