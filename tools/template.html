@@ -1,0 +1,401 @@
+<title>Suppressor Bench</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: spec-sheet header, filter row, weight sliders, category leaders strip, one sortable results table, saved shortlist below */
+:root{
+  --bg:#f4f6f7; --panel:#ffffff; --ink:#111518; --ink-2:#4b555c; --ink-3:#6f7a81;
+  --rule:#dde3e7; --chip:#e8eef2; --accent:#2a78d6; --accent-ink:#ffffff;
+  --good:#1a8f63; --mid:#c98a12; --bad:#c8453a; --bar:#c9d6df; --star:#d99a00; --warn:#a85d00; --row-hi:#eef5fd;
+  --f-display:"Barlow Condensed","Arial Narrow",Arial,sans-serif;
+  --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#121618; --panel:#1a1f22; --ink:#eef2f4; --ink-2:#b7c1c7; --ink-3:#8f9aa1;
+  --rule:#2a3236; --chip:#242b2f; --accent:#4a93ea; --accent-ink:#0d1114;
+  --good:#3cc28f; --mid:#e0a63a; --bad:#e8675b; --bar:#34404a; --star:#f0b93a; --warn:#e0a24a; --row-hi:#1d2a36; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#121618; --panel:#1a1f22; --ink:#eef2f4; --ink-2:#b7c1c7; --ink-3:#8f9aa1;
+  --rule:#2a3236; --chip:#242b2f; --accent:#4a93ea; --accent-ink:#0d1114;
+  --good:#3cc28f; --mid:#e0a63a; --bad:#e8675b; --bar:#34404a; --star:#f0b93a; --warn:#e0a24a; --row-hi:#1d2a36; color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:14px;line-height:1.45;margin:0}
+.wrap{max-width:1240px;margin:0 auto;padding-block:28px 56px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:18px}
+header h1{font-family:var(--f-display);font-weight:700;font-size:40px;line-height:1;margin:0;text-wrap:balance}
+header p{margin:8px 0 0;color:var(--ink-2);max-width:72ch}
+h2{font-family:var(--f-display);font-weight:600;font-size:22px;margin:0;letter-spacing:.02em;text-wrap:balance}
+.controls{display:flex;flex-wrap:wrap;gap:12px;align-items:end}
+.field{display:grid;gap:4px;min-width:0}
+.lbl,.field>label{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);font-weight:600}
+select,input[type=search],input[type=number],textarea{font:inherit;color:var(--ink);background:var(--panel);border:1px solid var(--rule);border-radius:6px;padding:7px 10px;min-width:0;max-width:100%}
+input[type=search]{width:200px}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.seg{display:inline-flex;border:1px solid var(--rule);border-radius:6px;overflow:hidden;background:var(--panel)}
+.seg button{font:inherit;border:0;background:transparent;color:var(--ink-2);padding:7px 12px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--chip);color:var(--ink);font-weight:600}
+.picker{position:relative}
+.picker summary{list-style:none;cursor:pointer;background:var(--panel);border:1px solid var(--rule);border-radius:6px;padding:7px 30px 7px 10px;min-width:240px;max-width:100%;position:relative;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.picker summary::-webkit-details-marker{display:none}
+.picker summary::after{content:"▾";position:absolute;right:10px;color:var(--ink-3)}
+.picker .pop{position:absolute;z-index:20;top:calc(100% + 4px);left:0;width:min(380px,calc(100vw - 32px));background:var(--panel);border:1px solid var(--rule);border-radius:8px;padding:10px;display:grid;gap:8px;box-shadow:0 8px 24px rgba(0,0,0,.18)}
+.optlist{display:grid;gap:2px;max-height:min(360px,55vh);overflow:auto}
+.opt{display:grid;grid-template-columns:auto 1fr auto;gap:8px;align-items:center;padding:5px 4px;border-radius:4px;cursor:pointer}
+.opt:hover{background:var(--chip)}
+.check{display:inline-flex;gap:6px;align-items:center;color:var(--ink-2);padding:7px 0;cursor:pointer}
+.btn{font:inherit;font-size:13px;border:1px solid var(--rule);background:var(--panel);color:var(--ink);border-radius:6px;padding:6px 11px;cursor:pointer}
+.btn:hover{border-color:var(--ink-3)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.panel{background:var(--panel);border:1px solid var(--rule);border-radius:10px;padding:16px}
+.weights{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px 22px;align-items:end}
+.wt{display:grid;gap:4px}
+.wt .top{display:flex;justify-content:space-between;align-items:baseline}
+.wt output{font-family:var(--f-mono);font-size:12.5px;color:var(--ink-2)}
+input[type=range]{width:100%;accent-color:var(--accent)}
+.mix{display:grid;gap:6px;margin-top:16px;padding-top:14px;border-top:1px solid var(--rule)}
+.mixrow{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;align-items:center;font-size:13px;color:var(--ink-2)}
+.mixrow output{font-family:var(--f-mono);font-size:12.5px}
+@media (max-width:600px){.mixrow{grid-template-columns:1fr 1fr}.mixrow input{grid-column:1/-1;grid-row:1}.mixrow span:last-child{text-align:right}}
+.wthead{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:12px}
+.hint{color:var(--ink-3);font-size:12.5px;margin:0}
+.leaders{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px}
+.leader{background:var(--panel);border:1px solid var(--rule);border-radius:8px;padding:10px 12px;display:grid;gap:2px;min-width:0}
+.leader .k{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);font-weight:600}
+.leader .v{font-family:var(--f-display);font-size:24px;font-weight:600;line-height:1.1;font-variant-numeric:tabular-nums}
+.leader .n{font-size:13px;color:var(--ink-2);overflow-wrap:anywhere}
+.reshead{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:8px}
+.tblwrap{overflow-x:auto;background:var(--panel);border:1px solid var(--rule);border-radius:10px}
+table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums;font-size:13px}
+th,td{text-align:right;padding:7px 10px;border-bottom:1px solid var(--rule);white-space:nowrap;vertical-align:middle}
+tbody tr:last-child td{border-bottom:0}
+th{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);font-weight:600;background:var(--panel);position:sticky;top:0}
+th button{font:inherit;letter-spacing:inherit;text-transform:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer;display:inline-flex;gap:4px;align-items:center}
+th button[data-dir]{color:var(--ink)}
+th button[data-dir="asc"]::after{content:"▲";font-size:9px}
+th button[data-dir="desc"]::after{content:"▼";font-size:9px}
+th.l,td.l{text-align:left}
+td.can{white-space:normal;min-width:190px;max-width:270px;border-right:1px solid var(--rule)}
+td.can .star{float:left;margin:4px 8px 0 -2px}
+th.sticky{border-right:1px solid var(--rule)}
+td.can .mf{font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-3);font-weight:600}
+td.can .md{font-weight:600}
+.tag{display:inline-block;font-size:10.5px;letter-spacing:.05em;text-transform:uppercase;font-weight:600;border-radius:4px;padding:1px 5px;margin-left:4px;background:var(--chip);color:var(--ink-2);vertical-align:1px}
+.tag.otb{background:var(--accent);color:var(--accent-ink)}
+.sticky{position:sticky;left:0;background:var(--panel);z-index:1}
+th.sticky{z-index:2}
+tr.saved td{background:var(--row-hi)}
+.star{font:inherit;font-size:18px;line-height:1;border:0;background:none;cursor:pointer;color:var(--ink-3);padding:2px}
+.star[aria-pressed="true"]{color:var(--star)}
+.metric{display:inline-grid;grid-template-columns:auto 44px;gap:8px;align-items:center;justify-items:end}
+.mbar{width:44px;height:5px;border-radius:3px;background:var(--bar);overflow:hidden;display:block}
+.mbar i{display:block;height:100%;background:var(--good)}
+.mbar i.mid{background:var(--mid)}
+.mbar i.bad{background:var(--bad)}
+.est{color:var(--warn)}
+.mine{color:var(--accent);font-weight:600}
+.muted{color:var(--ink-3)}
+.score{font-family:var(--f-display);font-size:18px;font-weight:600}
+.rank{font-family:var(--f-mono);font-size:11px;color:var(--ink-3)}
+.edit{font:inherit;color:inherit;border:0;background:none;padding:0;cursor:pointer;border-bottom:1px dashed var(--rule)}
+.edit:hover{border-bottom-color:var(--ink-3)}
+td input[type=number]{width:84px;padding:3px 6px;text-align:right}
+.saved-list{display:grid;gap:10px}
+td.can .note{font-size:12px;color:var(--ink-2);font-style:italic;margin-top:2px}
+tr.noterow td{background:var(--row-hi);text-align:left;white-space:normal}
+.noteform{display:flex;flex-wrap:wrap;gap:8px;align-items:center;position:sticky;left:10px;max-width:min(560px,calc(100vw - 64px))}
+.noteform input,.svnote{font:inherit;color:var(--ink);background:var(--panel);border:1px solid var(--rule);border-radius:6px;padding:6px 10px;flex:1 1 220px;min-width:0}
+.svnote{width:100%}
+th .svwrap{display:grid;gap:6px;text-transform:none;letter-spacing:0;font-weight:400;font-size:13px;color:var(--ink);white-space:normal}
+.empty{color:var(--ink-3);padding:20px 12px;text-align:center}
+.io{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+textarea{width:100%;min-height:80px;font-family:var(--f-mono);font-size:12px}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:8px 14px;border-radius:6px;font-size:13px;z-index:30}
+footer{color:var(--ink-3);font-size:12.5px;max-width:90ch;display:grid;gap:6px}
+footer p{margin:0}
+@media (max-width:600px){.controls .field.catf{flex-basis:100%} .picker summary{min-width:0;width:100%} .picker .pop{position:static;width:auto;box-shadow:none;margin-top:4px} td.can{min-width:150px;max-width:170px} header h1{font-size:32px} input[type=search]{width:100%} .controls .field{flex:1 1 140px}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Suppressor Bench</h1>
+    <p>Every can from the 2025 and 2026 TBAC Silencer Summits, with price, weight, length past the muzzle and sound side by side. Sound compares fairly only on the same host and bore, so pick the hosts you care about, set what matters to you, and star the cans you want to keep, with a note on why.</p>
+  </header>
+
+  <div class="controls" role="group" aria-label="Filters">
+    <div class="field"><span class="lbl" id="yr-l">Summit year</span>
+      <div class="seg" id="yr" role="group" aria-labelledby="yr-l">
+        <button type="button" data-v="both" aria-pressed="true">2025 + 2026</button><button type="button" data-v="2026" aria-pressed="false">2026</button><button type="button" data-v="2025" aria-pressed="false">2025</button></div></div>
+    <div class="field catf"><span class="lbl" id="cat-l">Host and bore</span><details class="picker" id="picker"><summary aria-labelledby="cat-l catSum"><span id="catSum"></span></summary><div class="pop"><div class="io"><button type="button" class="btn" data-catall>Select all</button><button type="button" class="btn" data-catnone>Clear</button><button type="button" class="btn primary" data-catdone>Done</button></div><div id="catList" class="optlist"></div></div></details></div>
+    <div class="field"><label for="q">Find a can</label><input type="search" id="q" placeholder="Maker or model"></div>
+    <label class="check"><input type="checkbox" id="onlySaved"> Starred only</label>
+    <label class="check"><input type="checkbox" id="onlyPriced"> Priced only</label>
+  </div>
+
+  <section class="panel" aria-labelledby="wt-h">
+    <div class="wthead"><h2 id="wt-h">What matters to you</h2><button type="button" class="btn" id="wreset">Reset to 50/50 sound and weight</button></div>
+    <div class="weights">
+      <div class="wt"><div class="top"><label class="lbl" for="w-q">Sound</label><output id="o-q"></output></div><input type="range" id="w-q" min="0" max="100" step="1"></div>
+      <div class="wt"><div class="top"><label class="lbl" for="w-w">Weight</label><output id="o-w"></output></div><input type="range" id="w-w" min="0" max="100" step="1"></div>
+      <div class="wt"><div class="top"><label class="lbl" for="w-l">Length past muzzle</label><output id="o-l"></output></div><input type="range" id="w-l" min="0" max="100" step="1"></div>
+      <div class="wt"><div class="top"><label class="lbl" for="w-p">Price</label><output id="o-p"></output></div><input type="range" id="w-p" min="0" max="100" step="1"></div>
+    </div>
+    <div class="mix">
+      <label class="lbl" for="mix">How Sound is scored</label>
+      <div class="mixrow"><span>Peak dB(A) <output id="o-ma"></output></span><input type="range" id="mix" min="0" max="100" step="5" aria-describedby="mixhint"><span><output id="o-mi"></output> Impulse</span></div>
+      <p class="hint" id="mixhint">Peak dB(A) is the loudest instant of the shot. Impulse (Im-dB) also counts how long the pressure lasts, so it catches a long, boomy tail. Slide to set your own mix.</p>
+    </div>
+    <p class="hint" style="margin-top:12px">The four sliders always add up to 100%, and moving one sorts the results by score. Each can gets 0–100 per measure against every other can in the hosts and bores you picked (100 is the quietest, lightest, shortest or cheapest). The score is the weighted average. A can missing a measure you weight (usually price) gets no score.</p>
+  </section>
+
+  <section style="display:grid;gap:10px" aria-labelledby="ld-h">
+    <h2 id="ld-h" class="visually"><span id="cat-title"></span></h2>
+    <div class="leaders" id="leaders"></div>
+  </section>
+
+  <section style="display:grid;gap:10px">
+    <div class="reshead"><h2>Results</h2><span class="hint" id="count"></span></div>
+    <p class="hint">Lower is better for every number here. Bars show where a can sits in its field: a longer bar means louder, heavier, longer or pricier, and the color runs from <b style="color:var(--good)">green</b> (best third) to <b style="color:var(--bad)">red</b> (worst third). Score is the opposite: higher is better.</p>
+    <div class="tblwrap"><table id="tbl" aria-describedby="count"></table></div>
+    <p class="hint">Click a column to sort. Click any price or length to enter your own number; it is saved in this browser and shown in <span class="mine">blue</span>.</p>
+  </section>
+
+  <section class="panel" style="display:grid;gap:12px" aria-labelledby="sv-h">
+    <div class="reshead"><h2 id="sv-h">Starred cans</h2><span class="hint" id="svcount"></span></div>
+    <div class="saved-list" id="saved"></div>
+    <div class="io">
+      <button type="button" class="btn" id="copyLink">Copy share link</button>
+      <button type="button" class="btn" id="copyJson">Copy backup</button>
+      <button type="button" class="btn" id="showImport">Restore from backup</button>
+      <button type="button" class="btn" id="clearSaved">Clear stars</button>
+    </div>
+    <div id="importBox" hidden style="display:grid;gap:8px">
+      <label class="lbl" for="importText">Paste a backup (stars, your prices and lengths)</label>
+      <textarea id="importText"></textarea>
+      <div class="io"><button type="button" class="btn primary" id="doImport">Restore</button><span class="hint" id="importMsg"></span></div>
+    </div>
+    <p class="hint">Stars, notes, weights and your own numbers stay in this browser. The share link carries your stars and notes; copy a backup to move everything to another device.</p>
+  </section>
+
+  <footer>
+    <p><b>Peak dB(A)</b> is the mil-spec average dB(A) of the left and right muzzle mics, and <b>Impulse</b> is the average of their Im-dB (lower is quieter for both). The Sound score blends the two by your mix. <b>Ear</b> is dB(A) at the shooter's ear. Data: TBAC Silencer Summit 2025 and 2026; both years used the same hosts and mics, so they can be pooled.</p>
+    <p><b>Length past muzzle</b> is the Summit overall length, except for over-the-barrel cans (tagged OTB), where it is the length added to the gun: Dead Air Nomad Ti OTB 4.6 in (Dead Air), Unknown OG 30 4.0 in (Unknown Suppressors), B&amp;T TiRe-X with OTB about 4.1 in (estimate from reviews). TiRe-X Compact has no published figure, so it shows overall length with a question mark until you enter one.</p>
+    <p><b>Price</b> comes from Kevin's price list first (Oct 2026, before tax and stamp), then the whichcan.com catalog MSRP (tagged <i>cat.</i>). <span class="est">Orange</span> prices are estimates. One very high price in a field, like $6,000 on the Typhon 56, squeezes everyone else's price scores together.</p>
+  </footer>
+</div>
+<div class="toast" id="toast" hidden></div>
+
+<script id="data" type="application/json">__DATA__</script>
+<script>
+(function(){
+"use strict";
+const RAW=JSON.parse(document.getElementById('data').textContent);
+const HOST={".22LR-PS":".22 LR pistol","9mm-PS":"9mm pistol","5.56-16AR":"5.56, 16 in AR",".300BO-16BA":".300 BLK, 16 in bolt",".308-20BA":".308, 20 in bolt",".300WM-BA":".300 Win Mag, bolt","6CM-BA":"6 Creedmoor, bolt","7BC-18BA":"7 Backcountry, 18 in bolt"};
+const hostName=h=>HOST[h]||h;
+const LS='suppressor-bench-v1';
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const canKey=r=>r.m+'|'+r.s;
+let st={yr:'both',cats:['.300BO-16BA|.30'],q:'',onlySaved:false,onlyPriced:false,w:{q:50,w:50,l:0,p:0},mix:50,sort:{k:'score',dir:'desc'},saved:[],notes:{},price:{},len:{}};
+try{const s=JSON.parse(localStorage.getItem(LS)||'null');if(s){if(s.cat&&!s.cats){s.cats=s.cat==='all'?null:[s.cat];delete s.cat;if(!s.cats)s.cats=[...new Set(RAW.rows.map(r=>r.h+'|'+r.b))]}st=Object.assign(st,s,{q:''});}}catch(e){}
+// shared link: ?saved=key1~key2 (GitHub Pages) or #saved:... is not used; query string only
+try{const u=new URL(location.href);const sv=u.searchParams.get('saved');if(sv){const add=sv.split('~').map(decodeURIComponent).filter(k=>RAW.rows.some(r=>canKey(r)===k));st.saved=[...new Set([...st.saved,...add])];const n=u.searchParams.get('notes');if(n){const o=JSON.parse(n);for(const k in o)if(add.includes(k)&&!st.notes[k])st.notes[k]=String(o[k]).slice(0,200)}}}catch(e){}
+const save=()=>{try{localStorage.setItem(LS,JSON.stringify({yr:st.yr,cats:st.cats,onlySaved:st.onlySaved,onlyPriced:st.onlyPriced,w:st.w,mix:st.mix,sort:st.sort,saved:st.saved,notes:st.notes,price:st.price,len:st.len}))}catch(e){}};
+function toast(t){const el=$('toast');el.textContent=t;el.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>el.hidden=true,1800)}
+
+// effective values with the viewer's overrides
+function price(r){const o=st.price[canKey(r)];if(o!=null)return{v:o,src:'mine'};return r.p!=null?{v:r.p,src:r.pb}:{v:null,src:null}}
+function length(r){const o=st.len[canKey(r)];if(o!=null)return{v:o,src:'mine'};if(r.otb){return r.a!=null?{v:r.a,src:'otb'}:{v:r.l,src:'otb?'}}return{v:r.l,src:'oal'}}
+
+function inYear(r){return st.yr==='both'||String(r.y)===st.yr}
+function cats(){const m=new Map();RAW.rows.filter(inYear).forEach(r=>{const k=r.h+'|'+r.b;m.set(k,(m.get(k)||0)+1)});return m}
+
+// host × bore picker: any mix of fields; the selected fields are scored together on one scale
+let pickerYr=null;
+const catLabel=k=>{const[h,b]=k.split('|');return`${hostName(h)} · ${b} cans`};
+function selected(){return new Set(st.cats)}
+function buildCatPicker(){
+  const m=cats();st.cats=st.cats.filter(k=>m.has(k));
+  if(!st.cats.length)st.cats=[[...m.entries()].sort((a,b)=>b[1]-a[1])[0][0]];
+  if(pickerYr!==st.yr){pickerYr=st.yr;
+    const opts=[...m.entries()].sort((a,b)=>b[1]-a[1]);
+    const box=([k,n])=>`<label class="opt"><input type="checkbox" data-cat="${esc(k)}"> <span>${esc(catLabel(k))}</span><span class="muted">${n}</span></label>`;
+    const main=opts.filter(o=>o[1]>=3),few=opts.filter(o=>o[1]<3);
+    $('catList').innerHTML=main.map(box).join('')+(few.length?`<div class="lbl" style="margin-top:6px">Fewer than 3 cans</div>`+few.map(box).join(''):'');}
+  const s=selected();document.querySelectorAll('#catList input[data-cat]').forEach(i=>i.checked=s.has(i.dataset.cat));
+  const n=st.cats.length,total=m.size;
+  $('catSum').textContent=n===total?'All hosts and bores':n===1?catLabel(st.cats[0]):`${n} hosts and bores`;
+}
+
+// score each row within its host × bore field for the chosen years
+function scored(){
+  const rows=RAW.rows.filter(inYear).map(r=>({r,q:r.q,i:r.i,e:r.e,w:r.w,l:length(r),p:price(r)}));
+  const sel=selected();const groups=new Map();rows.forEach(x=>{const fk=x.r.h+'|'+x.r.b;const k=sel.has(fk)?'sel':fk;(groups.get(k)||groups.set(k,[]).get(k)).push(x)});
+  const W=st.w,tot=W.q+W.w+W.l+W.p;
+  groups.forEach(g=>{
+    const get={qa:x=>x.q,qi:x=>x.i,w:x=>x.w,l:x=>x.l.v,p:x=>x.p.v};const mi=st.mix/100;
+    const rng={};for(const m in get){const v=g.map(get[m]).filter(v=>v!=null);rng[m]=[Math.min(...v),Math.max(...v)]}
+    g.forEach(x=>{x.s={};for(const m in get){const v=get[m](x);const[lo,hi]=rng[m];x.s[m]=v==null?null:(hi===lo?100:(hi-v)/(hi-lo)*100)}
+      x.s.q=x.s.qi==null?x.s.qa:(1-mi)*x.s.qa+mi*x.s.qi;
+      if(tot===0){x.score=null;return}
+      let s=0,ok=true;for(const m in W){if(!W[m])continue;if(x.s[m]==null){ok=false;break}s+=W[m]*x.s[m]}
+      x.score=ok?s/tot:null});
+    const ranked=g.filter(x=>x.score!=null).sort((a,b)=>b.score-a.score);ranked.forEach((x,i)=>x.rank=i+1);
+    g.forEach(x=>x.n=g.length);
+  });
+  return{rows,groups};
+}
+
+function fmtPrice(p){if(p.v==null)return'<span class="muted">—</span>';const t='$'+Math.round(p.v).toLocaleString('en-US');
+  if(p.src==='mine')return`<span class="mine" title="Your price">${t}</span>`;
+  if(p.src==='estimate')return`<span class="est" title="Estimate">${t}</span>`;
+  if(p.src==='catalog')return`${t}<span class="tag" title="whichcan.com catalog MSRP">cat.</span>`;
+  return`<span title="${esc(p.src||'')}">${t}</span>`}
+function fmtLen(l){if(l.v==null)return'<span class="muted">—</span>';const t=l.v.toFixed(2);
+  if(l.src==='mine')return`<span class="mine" title="Your length">${t}</span>`;
+  if(l.src==='otb?')return`<span class="est" title="Over-the-barrel can with no published added length; this is overall length">${t}?</span>`;
+  return t}
+// bar length follows the raw number within the field (longer = louder, heavier, longer, pricier); color shows good to bad
+const bar=s=>s==null?'<span class="mbar"></span>':`<span class="mbar" title="Scores ${Math.round(s)} of 100 in this field (100 is best)"><i class="${s>=67?'':s>=33?'mid':'bad'}" style="width:${Math.max(4,100-s).toFixed(0)}%"></i></span>`;
+const metric=(txt,s)=>`<span class="metric"><span>${txt}</span>${bar(s)}</span>`;
+
+const COLS=[
+  {k:'can',t:'Can',cls:'l sticky'},
+  {k:'score',t:'Score',def:'desc'},
+  {k:'q',t:'Peak dB(A)',def:'asc'},
+  {k:'i',t:'Impulse dB',def:'asc'},
+  {k:'e',t:'Ear dB(A)',def:'asc'},
+  {k:'w',t:'Weight oz',def:'asc'},
+  {k:'l',t:'Length in',def:'asc'},
+  {k:'p',t:'Price',def:'asc'},
+  {k:'d',t:'Dia in',def:'asc'},
+  {k:'host',t:'Host · year',cls:'l'}];
+const val={can:x=>(x.r.m+' '+x.r.s).toLowerCase(),score:x=>x.score,q:x=>x.q,i:x=>x.i,e:x=>x.e,w:x=>x.w,l:x=>x.l.v,p:x=>x.p.v,d:x=>x.r.d,host:x=>x.r.h+x.r.y};
+
+let editing=null,noteOpen=null;
+var dragging=false;
+function render(){
+  buildCatPicker();
+  ['q','w','l','p'].forEach(m=>{const el=$('w-'+m);if(document.activeElement!==el||!dragging)el.value=st.w[m];});
+  const tot=st.w.q+st.w.w+st.w.l+st.w.p;
+  ['q','w','l','p'].forEach(m=>{$('o-'+m).textContent=st.w[m]+'%'});
+  $('mix').value=st.mix;$('o-ma').textContent=(100-st.mix)+'%';$('o-mi').textContent=st.mix+'%';
+  document.querySelectorAll('#yr button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===st.yr));
+  $('onlySaved').checked=st.onlySaved;$('onlyPriced').checked=st.onlyPriced;
+  const {rows,groups}=scored();
+  const sel=selected(),one=st.cats.length===1;
+  let list=rows.filter(x=>sel.has(x.r.h+'|'+x.r.b));
+  const field=list.slice();
+  const q=st.q.trim().toLowerCase();
+  if(q)list=list.filter(x=>(x.r.m+' '+x.r.s).toLowerCase().includes(q));
+  if(st.onlySaved)list=list.filter(x=>st.saved.includes(canKey(x.r)));
+  if(st.onlyPriced)list=list.filter(x=>x.p.v!=null);
+  const f=val[st.sort.k]||val.score,d=st.sort.dir==='asc'?1:-1;
+  list.sort((a,b)=>{const A=f(a),B=f(b);if(A==null&&B==null)return 0;if(A==null)return 1;if(B==null)return-1;return(A<B?-1:A>B?1:0)*d});
+  // leaders
+  {
+    const[h,b]=st.cats[0].split('|');const bare=one?RAW.bare.filter(x=>x.h===h&&inYear(x)):[];
+    $('cat-title').textContent=one?`${hostName(h)} with ${b} cans`:$('catSum').textContent;
+    const best=(fn)=>{let m=null;field.forEach(x=>{const v=fn(x);if(v!=null&&(m==null||v<m.v))m={v,x}});return m};
+    const lead=(k,m,fmt)=>`<div class="leader"><span class="k">${k}</span>${m?`<span class="v">${fmt(m.v,m.x)}</span><span class="n">${esc(m.x.r.m)} ${esc(m.x.r.s)} · ${m.x.r.y}</span>`:'<span class="n muted">No data</span>'}</div>`;
+    const top=field.filter(x=>x.rank===1)[0];
+    $('leaders').innerHTML=
+      `<div class="leader"><span class="k">Top score</span>${top?`<span class="v">${top.score.toFixed(0)}</span><span class="n">${esc(top.r.m)} ${esc(top.r.s)} · ${top.r.y}</span>`:'<span class="n muted">Set a weight above</span>'}</div>`+
+      lead('Quietest (your mix)',best(x=>x.s.q==null?null:-x.s.q),(v,x)=>x.q.toFixed(1)+' dB'+(x.i!=null?` / ${x.i.toFixed(1)}`:''))+lead('Lightest',best(x=>x.w),v=>v.toFixed(1)+' oz')+
+      lead('Shortest past muzzle',best(x=>x.l.v),v=>v.toFixed(2)+' in')+lead('Cheapest',best(x=>x.p.v),v=>'$'+Math.round(v).toLocaleString('en-US'))+
+      (bare.length?`<div class="leader"><span class="k">Bare muzzle</span><span class="v">${(bare.reduce((s,x)=>s+x.q,0)/bare.length).toFixed(1)} dB</span><span class="n">Unsuppressed reference</span></div>`:'')+
+      (one?'':`<div class="leader"><span class="k">Mixed hosts</span><span class="n">These cans are scored together on one scale. Sound from different hosts isn't a fair fight: a .22 pistol is always quieter than a .300 Win Mag.</span></div>`);
+  }
+  $('count').textContent=`${list.length} of ${field.length} tests`;
+  // table
+  const head='<thead><tr>'+COLS.map(c=>`<th class="${c.cls||''}" scope="col">${c.nosort?c.t:`<button type="button" data-k="${c.k}"${st.sort.k===c.k?` data-dir="${st.sort.dir}"`:''}>${c.t}</button>`}</th>`).join('')+'</tr></thead>';
+  const body=list.length?list.map(x=>{const r=x.r,key=canKey(r),sv=st.saved.includes(key),id=esc(key);
+    const pe=editing&&editing.key===key&&editing.f==='p',le=editing&&editing.key===key&&editing.f==='l';
+    return`<tr class="${sv?'saved':''}" data-rid="${esc(key+'|'+r.y+'|'+r.h)}">
+<td class="l can sticky"><button type="button" class="star" data-star="${id}" aria-pressed="${sv}" aria-label="${sv?'Unstar':'Star'} ${esc(r.m+' '+r.s)}">${sv?'★':'☆'}</button><div><div class="mf">${esc(r.m)}</div><div class="md">${esc(r.s)}${r.otb?'<span class="tag otb" title="Over the barrel">OTB</span>':''}${r.dc?'<span class="tag" title="Discontinued per whichcan.com">disc.</span>':''}</div>${sv&&st.notes[key]?`<div class="note">${esc(st.notes[key])}</div>`:''}</div></td>
+<td>${x.score!=null?`<span class="score">${x.score.toFixed(0)}</span> <span class="rank">#${x.rank}</span>`:'<span class="muted">—</span>'}</td>
+<td>${metric(x.q.toFixed(1),x.s.qa)}</td>
+<td>${metric(x.i!=null?x.i.toFixed(1):'—',x.s.qi)}</td>
+<td>${x.e!=null?x.e.toFixed(1):'—'}</td>
+<td>${metric(x.w!=null?x.w.toFixed(1):'—',x.s.w)}</td>
+<td>${le?`<input type="number" step="0.05" min="0" data-in="l" data-key="${id}" value="${x.l.v??''}" aria-label="Length past muzzle, inches">`:metric(`<button type="button" class="edit" data-ed="l" data-key="${id}">${fmtLen(x.l)}</button>`,x.s.l)}</td>
+<td>${pe?`<input type="number" step="1" min="0" data-in="p" data-key="${id}" value="${x.p.v!=null?Math.round(x.p.v):''}" aria-label="Price, dollars">`:metric(`<button type="button" class="edit" data-ed="p" data-key="${id}">${fmtPrice(x.p)}</button>`,x.s.p)}</td>
+<td>${r.d!=null?r.d.toFixed(2):'—'}</td>
+<td class="l"><span class="muted">${esc(hostName(r.h))} · ${esc(r.b)} · ${r.y}</span></td></tr>${noteOpen&&noteOpen.key===key&&noteOpen.rid===(key+'|'+r.y+'|'+r.h)?`<tr class="noterow"><td colspan="${COLS.length}"><div class="noteform"><label class="lbl" for="noteInput">Why this can?</label><input id="noteInput" data-note="${id}" maxlength="200" placeholder="e.g. Dirt cheap 9mm PCC can" value="${esc(st.notes[key]||'')}"><button type="button" class="btn primary" data-notedone>Save note</button><button type="button" class="btn" data-notedone>Skip</button></div></td></tr>`:''}`}).join(''):`<tr><td colspan="${COLS.length}" class="empty">No cans match. Clear the search or the Starred and Priced filters.</td></tr>`;
+  $('tbl').innerHTML=head+'<tbody>'+body+'</tbody>';
+  const inp=document.querySelector('#tbl input[data-in]');if(inp){inp.focus();inp.select()}
+  const ni=$('noteInput');if(ni&&noteOpen&&noteOpen.focus){noteOpen.focus=false;ni.focus()}
+  renderSaved(rows);save();
+}
+
+function renderSaved(rows){
+  $('svcount').textContent=st.saved.length?`${st.saved.length} can${st.saved.length>1?'s':''}`:'';
+  if(!st.saved.length){$('saved').innerHTML='<p class="empty">Star a can in the results to keep it here. It stays starred across every host and year.</p>';return}
+  const out=st.saved.map(key=>{
+    const tests=RAW.rows.filter(r=>canKey(r)===key);if(!tests.length)return'';
+    const r0=tests[0];const sc=rows.filter(x=>canKey(x.r)===key);
+    const p=price(r0),l=length(r0);
+    const lines=sc.length?sc.sort((a,b)=>a.q-b.q).map(x=>`<tr><td class="l">${esc(hostName(x.r.h))} · ${esc(x.r.b)} · ${x.r.y}</td><td>${x.q.toFixed(1)}</td><td>${x.i!=null?x.i.toFixed(1):'—'}</td><td>${x.e!=null?x.e.toFixed(1):'—'}</td><td>${fmtPrice(x.p)}</td><td>${x.score!=null?x.score.toFixed(0)+' <span class="rank">#'+x.rank+' of '+x.n+'</span>':'—'}</td></tr>`).join(''):`<tr><td class="l muted" colspan="6">Not tested in the selected year</td></tr>`;
+    return`<div class="tblwrap"><table><thead><tr><th class="l" scope="col"><button type="button" class="star" data-star="${esc(key)}" aria-pressed="true" aria-label="Unstar">★</button> ${esc(r0.m)} ${esc(r0.s)}${r0.otb?'<span class="tag otb">OTB</span>':''} <span class="muted" style="text-transform:none;letter-spacing:0;font-weight:400">${[r0.w!=null?r0.w.toFixed(1)+' oz':'',l.v!=null?l.v.toFixed(2)+' in past muzzle':''].filter(Boolean).map(t=>' · '+t).join('')}</span><div class="svwrap"><label class="lbl" for="sn-${esc(key)}">Why this can?</label><input class="svnote" id="sn-${esc(key)}" data-svnote="${esc(key)}" maxlength="200" placeholder="e.g. Dirt cheap 9mm PCC can" value="${esc(st.notes[key]||'')}"></div></th><th scope="col">Peak</th><th scope="col">Impulse</th><th scope="col">Ear</th><th scope="col">Price</th><th scope="col">Score</th></tr></thead><tbody>${lines}</tbody></table></div>`}).join('');
+  $('saved').innerHTML=out;
+}
+
+// events
+document.addEventListener('click',e=>{
+  const s=e.target.closest('[data-star]');if(s){const k=s.dataset.star;const on=!st.saved.includes(k);st.saved=on?[...st.saved,k]:st.saved.filter(x=>x!==k);
+    const tr=s.closest('#tbl tr');noteOpen=on&&tr?{key:k,rid:tr.dataset.rid,focus:true}:null;render();return}
+  if(e.target.closest('[data-notedone]')){noteOpen=null;render();return}
+  const ed=e.target.closest('[data-ed]');if(ed){editing={key:ed.dataset.key,f:ed.dataset.ed};render();return}
+  const th=e.target.closest('th button[data-k]');if(th){const k=th.dataset.k;const c=COLS.find(c=>c.k===k);st.sort=st.sort.k===k?{k,dir:st.sort.dir==='asc'?'desc':'asc'}:{k,dir:c.def||'asc'};render();return}
+  const y=e.target.closest('#yr button');if(y){st.yr=y.dataset.v;render();return}
+});
+function commit(inp){const k=inp.dataset.key,f=inp.dataset.in,v=inp.value.trim();const map=f==='p'?st.price:st.len;
+  if(v==='')delete map[k];else{const n=parseFloat(v);if(isFinite(n)&&n>=0)map[k]=n}editing=null;render()}
+document.addEventListener('keydown',e=>{const inp=e.target.closest&&e.target.closest('input[data-in]');if(!inp)return;
+  if(e.key==='Enter'){e.preventDefault();commit(inp)}else if(e.key==='Escape'){editing=null;render()}});
+document.addEventListener('focusout',e=>{const inp=e.target.closest&&e.target.closest('input[data-in]');if(inp&&editing)commit(inp)});
+document.addEventListener('input',e=>{const t=e.target;const k=t.dataset&&(t.dataset.note||t.dataset.svnote);if(!k)return;const v=t.value.trim();if(v)st.notes[k]=v;else delete st.notes[k];save()});
+document.addEventListener('change',e=>{if(e.target.dataset&&e.target.dataset.svnote)render()});
+document.addEventListener('keydown',e=>{if(e.target.id==='noteInput'&&(e.key==='Enter'||e.key==='Escape')){e.preventDefault();noteOpen=null;render()}});
+$('catList').addEventListener('change',e=>{const k=e.target.dataset.cat;if(!k)return;st.cats=e.target.checked?[...new Set([...st.cats,k])]:st.cats.filter(x=>x!==k);if(!st.cats.length){st.cats=[k];e.target.checked=true}render()});
+$('picker').addEventListener('click',e=>{if(e.target.closest('[data-catall]')){st.cats=[...cats().keys()];render()}else if(e.target.closest('[data-catnone]')){st.cats=[st.cats[0]];render()}else if(e.target.closest('[data-catdone]'))$('picker').open=false});
+document.addEventListener('click',e=>{if($('picker').open&&!e.target.closest('#picker'))$('picker').open=false});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('picker').open){$('picker').open=false;$('picker').querySelector('summary').focus()}});
+$('q').addEventListener('input',e=>{st.q=e.target.value;render()});
+$('onlySaved').addEventListener('change',e=>{st.onlySaved=e.target.checked;render()});
+$('onlyPriced').addEventListener('change',e=>{st.onlyPriced=e.target.checked;render()});
+// sliders are linked: they always add up to 100%. Moving one shares the rest among the others in their current proportions.
+function setWeight(m,v){v=Math.max(0,Math.min(100,Math.round(v)));const others=['q','w','l','p'].filter(k=>k!==m);
+  const prev=others.reduce((s,k)=>s+(st.w[k]||0),0),rest=100-v;
+  const raw=others.map(k=>prev>0?(st.w[k]||0)/prev*rest:rest/others.length);
+  const fl=raw.map(Math.floor);let left=rest-fl.reduce((a,b)=>a+b,0);
+  raw.map((x,i)=>[x-fl[i],i]).sort((a,b)=>b[0]-a[0]).forEach(([,i])=>{if(left>0){fl[i]++;left--}});
+  st.w[m]=v;others.forEach((k,i)=>st.w[k]=fl[i])}
+function normWeights(){const t=['q','w','l','p'].reduce((s,k)=>s+(+st.w[k]||0),0);if(t===100)return;
+  if(!t){st.w={q:50,w:50,l:0,p:0};return}const q=st.w.q;st.w.q=(+q||0)/t*100;setWeight('q',st.w.q)}
+normWeights();
+let raf=0;
+function onSlide(m,e,end){setWeight(m,+e.target.value);st.sort={k:'score',dir:'desc'};dragging=!end;
+  if(end){cancelAnimationFrame(raf);raf=0;render();return}
+  if(!raf)raf=requestAnimationFrame(()=>{raf=0;render()})}
+['q','w','l','p'].forEach(m=>{const el=$('w-'+m);
+  el.addEventListener('input',e=>onSlide(m,e,false));
+  el.addEventListener('change',e=>onSlide(m,e,true));});
+$('mix').addEventListener('input',e=>{st.mix=+e.target.value;st.sort={k:'score',dir:'desc'};if(!raf)raf=requestAnimationFrame(()=>{raf=0;render()})});
+$('mix').addEventListener('change',e=>{st.mix=+e.target.value;render()});
+$('wreset').addEventListener('click',()=>{st.w={q:50,w:50,l:0,p:0};st.sort={k:'score',dir:'desc'};render()});
+function copy(text,msg){const done=()=>toast(msg);try{navigator.clipboard.writeText(text).then(done,()=>fallback())}catch(e){fallback()}
+  function fallback(){$('importBox').hidden=false;$('importText').value=text;$('importText').select();$('importMsg').textContent='Copy this text with your keyboard.'}}
+$('copyLink').addEventListener('click',()=>{if(!st.saved.length){toast('Star a can first');return}
+  const u=new URL(location.href);u.hash='';u.search='?saved='+st.saved.map(encodeURIComponent).join('~');const nn={};st.saved.forEach(k=>{if(st.notes[k])nn[k]=st.notes[k]});if(Object.keys(nn).length)u.searchParams.set('notes',JSON.stringify(nn));copy(u.toString(),'Share link copied')});
+$('copyJson').addEventListener('click',()=>copy(JSON.stringify({saved:st.saved,notes:st.notes,price:st.price,len:st.len,w:st.w,mix:st.mix}),'Backup copied'));
+$('showImport').addEventListener('click',()=>{$('importBox').hidden=!$('importBox').hidden;$('importMsg').textContent=''});
+$('doImport').addEventListener('click',()=>{try{const o=JSON.parse($('importText').value);
+  if(Array.isArray(o.saved))st.saved=[...new Set([...st.saved,...o.saved])];if(o.notes)Object.assign(st.notes,o.notes);if(o.price)Object.assign(st.price,o.price);if(o.len)Object.assign(st.len,o.len);if(o.w){st.w=o.w;normWeights()}if(o.mix!=null)st.mix=+o.mix;
+  $('importBox').hidden=true;$('importText').value='';render();toast('Backup restored')}catch(e){$('importMsg').textContent='That text is not a backup from this page. Copy it again with "Copy backup".'}});
+$('clearSaved').addEventListener('click',e=>{const b=e.currentTarget;if(b.dataset.armed){st.saved=[];delete b.dataset.armed;b.textContent='Clear stars';render();return}
+  b.dataset.armed=1;b.textContent='Click again to clear';setTimeout(()=>{delete b.dataset.armed;b.textContent='Clear stars'},3000)});
+render();
+})();
+</script>
