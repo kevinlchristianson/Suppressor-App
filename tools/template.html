@@ -52,6 +52,11 @@ input[type=search]{width:200px}
 .wt{display:grid;gap:4px}
 .wt .top{display:flex;justify-content:space-between;align-items:baseline}
 .wt output{font-family:var(--f-mono);font-size:12.5px;color:var(--ink-2)}
+.wt .on{display:inline-flex;gap:6px;align-items:center;cursor:pointer}
+.wt .on input{margin:0;accent-color:var(--accent)}
+.wt.off .lbl,.wt.off output{opacity:.55}
+.oltbl td,.oltbl th{padding:5px 10px}
+.olwrap summary{cursor:pointer;font-weight:600}
 input[type=range]{width:100%;accent-color:var(--accent)}
 .mix{display:grid;gap:6px;margin-top:16px;padding-top:14px;border-top:1px solid var(--rule)}
 .mixrow{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;align-items:center;font-size:13px;color:var(--ink-2)}
@@ -120,7 +125,7 @@ footer p{margin:0}
 <div class="wrap">
   <header>
     <h1>Suppressor Bench</h1>
-    <p>Every can from the 2025 and 2026 TBAC Silencer Summits, with price, weight, length past the muzzle and sound side by side. Sound compares fairly only on the same host and bore, so pick the hosts you care about, set what matters to you, and star the cans you want to keep, with a note on why.</p>
+    <p>Every can from the 2025 and 2026 TBAC Silencer Summits, with price, weight, length past the muzzle, sound and (where Outdoor Life tested it) recoil side by side. Sound compares fairly only on the same host and bore, so pick the hosts you care about, set what matters to you, and star the cans you want to keep, with a note on why.</p>
   </header>
 
   <div class="controls" role="group" aria-label="Filters">
@@ -136,17 +141,18 @@ footer p{margin:0}
   <section class="panel" aria-labelledby="wt-h">
     <div class="wthead"><h2 id="wt-h">What matters to you</h2><button type="button" class="btn" id="wreset">Reset to 50/50 sound and weight</button></div>
     <div class="weights">
-      <div class="wt"><div class="top"><label class="lbl" for="w-q">Sound</label><output id="o-q"></output></div><input type="range" id="w-q" min="0" max="100" step="1"></div>
-      <div class="wt"><div class="top"><label class="lbl" for="w-w">Weight</label><output id="o-w"></output></div><input type="range" id="w-w" min="0" max="100" step="1"></div>
-      <div class="wt"><div class="top"><label class="lbl" for="w-l">Length past muzzle</label><output id="o-l"></output></div><input type="range" id="w-l" min="0" max="100" step="1"></div>
-      <div class="wt"><div class="top"><label class="lbl" for="w-p">Price</label><output id="o-p"></output></div><input type="range" id="w-p" min="0" max="100" step="1"></div>
+      <div class="wt" id="wt-q"><div class="top"><span class="on"><input type="checkbox" data-on="q" aria-label="Use Sound in the score" checked><label class="lbl" for="w-q">Sound</label></span><output id="o-q"></output></div><input type="range" id="w-q" min="0" max="100" step="1"></div>
+      <div class="wt" id="wt-w"><div class="top"><span class="on"><input type="checkbox" data-on="w" aria-label="Use Weight in the score" checked><label class="lbl" for="w-w">Weight</label></span><output id="o-w"></output></div><input type="range" id="w-w" min="0" max="100" step="1"></div>
+      <div class="wt" id="wt-l"><div class="top"><span class="on"><input type="checkbox" data-on="l" aria-label="Use Length past muzzle in the score" checked><label class="lbl" for="w-l">Length past muzzle</label></span><output id="o-l"></output></div><input type="range" id="w-l" min="0" max="100" step="1"></div>
+      <div class="wt" id="wt-p"><div class="top"><span class="on"><input type="checkbox" data-on="p" aria-label="Use Price in the score" checked><label class="lbl" for="w-p">Price</label></span><output id="o-p"></output></div><input type="range" id="w-p" min="0" max="100" step="1"></div>
+      <div class="wt" id="wt-r"><div class="top"><span class="on"><input type="checkbox" data-on="r" aria-label="Use Recoil in the score" checked><label class="lbl" for="w-r">Recoil</label></span><output id="o-r"></output></div><input type="range" id="w-r" min="0" max="100" step="1"></div>
     </div>
     <div class="mix">
       <label class="lbl" for="mix">How Sound is scored</label>
       <div class="mixrow"><span>Peak dB(A) <output id="o-ma"></output></span><input type="range" id="mix" min="0" max="100" step="5" aria-describedby="mixhint"><span><output id="o-mi"></output> Impulse</span></div>
       <p class="hint" id="mixhint">Peak dB(A) is the loudest instant of the shot. Impulse (Im-dB) also counts how long the pressure lasts, so it catches a long, boomy tail. Slide to set your own mix.</p>
     </div>
-    <p class="hint" style="margin-top:12px">The four sliders always add up to 100%, and moving one sorts the results by score. Each can gets 0–100 per measure against every other can in the hosts and bores you picked (100 is the quietest, lightest, shortest or cheapest). The score is the weighted average. A can missing a measure you weight (usually price) gets no score.</p>
+    <p class="hint" style="margin-top:12px">The sliders always add up to 100%, and moving one sorts the results by score. Uncheck a measure to leave it out of the score (its weight goes to zero and the rest share 100%); check it again to bring back its old weight. Each can gets 0–100 per measure against every other can in the hosts and bores you picked (100 is the quietest, lightest, shortest, cheapest or softest recoiling). The score is the weighted average. A can missing a measure you weight gets no score. Recoil comes from the Outdoor Life recoil test, which covers only 18 of the cans here, so weighting Recoil leaves the rest unscored.</p>
   </section>
 
   <section style="display:grid;gap:10px" aria-labelledby="ld-h">
@@ -159,6 +165,13 @@ footer p{margin:0}
     <p class="hint">Lower is better for every number here. Bars show where a can sits in its field: a longer bar means louder, heavier, longer or pricier, and the color runs from <b style="color:var(--good)">green</b> (best third) to <b style="color:var(--bad)">red</b> (worst third). Score is the opposite: higher is better.</p>
     <div class="tblwrap"><table id="tbl" aria-describedby="count"></table></div>
     <p class="hint">Click a column to sort. Click any price or length to enter your own number; it is saved in this browser and shown in <span class="mine">blue</span>.</p>
+  </section>
+
+  <section class="panel olwrap">
+    <details id="olbox"><summary>Outdoor Life recoil test: all <span id="olcount"></span> setups</summary>
+      <p class="hint">Inches of recoil-sled travel on one rifle, average of up to four shots (lower is less recoil), with Outdoor Life's own sound reading. Rows marked <b>on page</b> feed the Recoil column above; the rest were not in either Silencer Summit, or were tested with a different brake. Click a column to sort.</p>
+      <div class="tblwrap"><table class="oltbl" id="oltbl"></table></div>
+    </details>
   </section>
 
   <section class="panel" style="display:grid;gap:12px" aria-labelledby="sv-h">
@@ -181,6 +194,7 @@ footer p{margin:0}
   <footer>
     <p><b>Peak dB(A)</b> is the mil-spec average dB(A) of the left and right muzzle mics, and <b>Impulse</b> is the average of their Im-dB (lower is quieter for both). The Sound score blends the two by your mix. <b>Ear</b> is dB(A) at the shooter's ear. Data: TBAC Silencer Summit 2025 and 2026; both years used the same hosts and mics, so they can be pooled.</p>
     <p><b>Length past muzzle</b> is the Summit overall length, except for over-the-barrel cans (tagged OTB), where it is the length added to the gun: Dead Air Nomad Ti OTB 4.6 in (Dead Air), Unknown OG 30 4.0 in (Unknown Suppressors), B&amp;T TiRe-X with OTB about 4.1 in (estimate from reviews). TiRe-X Compact has no published figure, so it shows overall length with a question mark until you enter one.</p>
+    <p><b>Recoil</b> is from Outdoor Life's suppressor recoil test: inches the rifle travelled on a recoil sled, averaged over up to four shots (bare muzzle 39.5 in). It is matched to a Summit can only when the setup agrees: the plain can, its flat cap or its own brake for a stock can, and an aftermarket brake only for Summit cans tested "with Brake" or "with Recoil X". Hover a recoil number for the setup and the other setups tested.</p>
     <p><b>Price</b> comes from Kevin's price list first (Oct 2026, before tax and stamp), then the whichcan.com catalog MSRP (tagged <i>cat.</i>). <span class="est">Orange</span> prices are estimates. One very high price in a field, like $6,000 on the Typhon 56, squeezes everyone else's price scores together.</p>
   </footer>
 </div>
@@ -197,11 +211,12 @@ const LS='suppressor-bench-v1';
 const $=id=>document.getElementById(id);
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const canKey=r=>r.m+'|'+r.s;
-let st={yr:'both',cats:['.300BO-16BA|.30'],q:'',onlySaved:false,onlyPriced:false,w:{q:50,w:50,l:0,p:0},mix:50,sort:{k:'score',dir:'desc'},saved:[],notes:{},price:{},len:{}};
+const MS=['q','w','l','p','r'];
+let st={yr:'both',cats:['.300BO-16BA|.30'],q:'',onlySaved:false,onlyPriced:false,w:{q:50,w:50,l:0,p:0,r:0},off:{},prev:{},mix:50,sort:{k:'score',dir:'desc'},saved:[],notes:{},price:{},len:{}};
 try{const s=JSON.parse(localStorage.getItem(LS)||'null');if(s){if(s.cat&&!s.cats){s.cats=s.cat==='all'?null:[s.cat];delete s.cat;if(!s.cats)s.cats=[...new Set(RAW.rows.map(r=>r.h+'|'+r.b))]}st=Object.assign(st,s,{q:''});}}catch(e){}
 // shared link: ?saved=key1~key2 (GitHub Pages) or #saved:... is not used; query string only
 try{const u=new URL(location.href);const sv=u.searchParams.get('saved');if(sv){const add=sv.split('~').map(decodeURIComponent).filter(k=>RAW.rows.some(r=>canKey(r)===k));st.saved=[...new Set([...st.saved,...add])];const n=u.searchParams.get('notes');if(n){const o=JSON.parse(n);for(const k in o)if(add.includes(k)&&!st.notes[k])st.notes[k]=String(o[k]).slice(0,200)}}}catch(e){}
-const save=()=>{try{localStorage.setItem(LS,JSON.stringify({yr:st.yr,cats:st.cats,onlySaved:st.onlySaved,onlyPriced:st.onlyPriced,w:st.w,mix:st.mix,sort:st.sort,saved:st.saved,notes:st.notes,price:st.price,len:st.len}))}catch(e){}};
+const save=()=>{try{localStorage.setItem(LS,JSON.stringify({yr:st.yr,cats:st.cats,onlySaved:st.onlySaved,onlyPriced:st.onlyPriced,w:st.w,off:st.off,prev:st.prev,mix:st.mix,sort:st.sort,saved:st.saved,notes:st.notes,price:st.price,len:st.len}))}catch(e){}};
 function toast(t){const el=$('toast');el.textContent=t;el.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>el.hidden=true,1800)}
 
 // effective values with the viewer's overrides
@@ -230,16 +245,16 @@ function buildCatPicker(){
 
 // score each row within its host × bore field for the chosen years
 function scored(){
-  const rows=RAW.rows.filter(inYear).map(r=>({r,q:r.q,i:r.i,e:r.e,w:r.w,l:length(r),p:price(r)}));
+  const rows=RAW.rows.filter(inYear).map(r=>({r,q:r.q,i:r.i,e:r.e,w:r.w,l:length(r),p:price(r),rc:r.rc??null}));
   const sel=selected();const groups=new Map();rows.forEach(x=>{const fk=x.r.h+'|'+x.r.b;const k=sel.has(fk)?'sel':fk;(groups.get(k)||groups.set(k,[]).get(k)).push(x)});
-  const W=st.w,tot=W.q+W.w+W.l+W.p;
+  const W=st.w,tot=MS.reduce((a,k)=>a+(W[k]||0),0);
   groups.forEach(g=>{
-    const get={qa:x=>x.q,qi:x=>x.i,w:x=>x.w,l:x=>x.l.v,p:x=>x.p.v};const mi=st.mix/100;
+    const get={qa:x=>x.q,qi:x=>x.i,w:x=>x.w,l:x=>x.l.v,p:x=>x.p.v,r:x=>x.rc};const mi=st.mix/100;
     const rng={};for(const m in get){const v=g.map(get[m]).filter(v=>v!=null);rng[m]=[Math.min(...v),Math.max(...v)]}
     g.forEach(x=>{x.s={};for(const m in get){const v=get[m](x);const[lo,hi]=rng[m];x.s[m]=v==null?null:(hi===lo?100:(hi-v)/(hi-lo)*100)}
       x.s.q=x.s.qi==null?x.s.qa:(1-mi)*x.s.qa+mi*x.s.qi;
       if(tot===0){x.score=null;return}
-      let s=0,ok=true;for(const m in W){if(!W[m])continue;if(x.s[m]==null){ok=false;break}s+=W[m]*x.s[m]}
+      let s=0,ok=true;for(const m of MS){if(!W[m])continue;if(x.s[m]==null){ok=false;break}s+=W[m]*x.s[m]}
       x.score=ok?s/tot:null});
     const ranked=g.filter(x=>x.score!=null).sort((a,b)=>b.score-a.score);ranked.forEach((x,i)=>x.rank=i+1);
     g.forEach(x=>x.n=g.length);
@@ -259,6 +274,9 @@ function fmtLen(l){if(l.v==null)return'<span class="muted">—</span>';const t=l
 // bar length follows the raw number within the field (longer = louder, heavier, longer, pricier); color shows good to bad
 const bar=s=>s==null?'<span class="mbar"></span>':`<span class="mbar" title="Scores ${Math.round(s)} of 100 in this field (100 is best)"><i class="${s>=67?'':s>=33?'mid':'bad'}" style="width:${Math.max(4,100-s).toFixed(0)}%"></i></span>`;
 const metric=(txt,s)=>`<span class="metric"><span>${txt}</span>${bar(s)}</span>`;
+const shortSetup=t=>t.replace(/ Brake$/,'').replace(/^Recoil X/,'RX').replace(/^Area 419/,'A419');
+const OLBARE=(RAW.ol||[]).find(o=>o.n==='Bare Muzzle');
+function rcTip(r){return`Outdoor Life recoil test: ${r.rc.toFixed(1)} in of sled travel, setup: ${r.rcs}`+(OLBARE?` (bare muzzle ${OLBARE.rc.toFixed(1)} in)`:'')+(r.rcn?`. Note: ${r.rcn}`:'')+(r.rco&&r.rco.length?`. Other setups: `+r.rco.map(o=>`${o[0]} ${o[1]!=null?o[1].toFixed(1):'—'} in`).join(', '):'')}
 
 const COLS=[
   {k:'can',t:'Can',cls:'l sticky'},
@@ -269,17 +287,17 @@ const COLS=[
   {k:'w',t:'Weight oz',def:'asc'},
   {k:'l',t:'Length in',def:'asc'},
   {k:'p',t:'Price',def:'asc'},
+  {k:'rc',t:'Recoil in',def:'asc'},
   {k:'d',t:'Dia in',def:'asc'},
   {k:'host',t:'Host · year',cls:'l'}];
-const val={can:x=>(x.r.m+' '+x.r.s).toLowerCase(),score:x=>x.score,q:x=>x.q,i:x=>x.i,e:x=>x.e,w:x=>x.w,l:x=>x.l.v,p:x=>x.p.v,d:x=>x.r.d,host:x=>x.r.h+x.r.y};
+const val={can:x=>(x.r.m+' '+x.r.s).toLowerCase(),score:x=>x.score,q:x=>x.q,i:x=>x.i,e:x=>x.e,w:x=>x.w,l:x=>x.l.v,p:x=>x.p.v,rc:x=>x.rc,d:x=>x.r.d,host:x=>x.r.h+x.r.y};
 
 let editing=null,noteOpen=null;
 var dragging=false;
 function render(){
   buildCatPicker();
-  ['q','w','l','p'].forEach(m=>{const el=$('w-'+m);if(document.activeElement!==el||!dragging)el.value=st.w[m];});
-  const tot=st.w.q+st.w.w+st.w.l+st.w.p;
-  ['q','w','l','p'].forEach(m=>{$('o-'+m).textContent=st.w[m]+'%'});
+  MS.forEach(m=>{const el=$('w-'+m),off=!!st.off[m];if(document.activeElement!==el||!dragging)el.value=st.w[m];el.disabled=off;
+    $('o-'+m).textContent=off?'off':st.w[m]+'%';$('wt-'+m).classList.toggle('off',off);document.querySelector(`input[data-on="${m}"]`).checked=!off});
   $('mix').value=st.mix;$('o-ma').textContent=(100-st.mix)+'%';$('o-mi').textContent=st.mix+'%';
   document.querySelectorAll('#yr button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===st.yr));
   $('onlySaved').checked=st.onlySaved;$('onlyPriced').checked=st.onlyPriced;
@@ -301,9 +319,9 @@ function render(){
     const lead=(k,m,fmt)=>`<div class="leader"><span class="k">${k}</span>${m?`<span class="v">${fmt(m.v,m.x)}</span><span class="n">${esc(m.x.r.m)} ${esc(m.x.r.s)} · ${m.x.r.y}</span>`:'<span class="n muted">No data</span>'}</div>`;
     const top=field.filter(x=>x.rank===1)[0];
     $('leaders').innerHTML=
-      `<div class="leader"><span class="k">Top score</span>${top?`<span class="v">${top.score.toFixed(0)}</span><span class="n">${esc(top.r.m)} ${esc(top.r.s)} · ${top.r.y}</span>`:'<span class="n muted">Set a weight above</span>'}</div>`+
+      `<div class="leader"><span class="k">Top score</span>${top?`<span class="v">${top.score.toFixed(0)}</span><span class="n">${esc(top.r.m)} ${esc(top.r.s)} · ${top.r.y}</span>`:'<span class="n muted">Turn on a measure above</span>'}</div>`+
       lead('Quietest (your mix)',best(x=>x.s.q==null?null:-x.s.q),(v,x)=>x.q.toFixed(1)+' dB'+(x.i!=null?` / ${x.i.toFixed(1)}`:''))+lead('Lightest',best(x=>x.w),v=>v.toFixed(1)+' oz')+
-      lead('Shortest past muzzle',best(x=>x.l.v),v=>v.toFixed(2)+' in')+lead('Cheapest',best(x=>x.p.v),v=>'$'+Math.round(v).toLocaleString('en-US'))+
+      lead('Shortest past muzzle',best(x=>x.l.v),v=>v.toFixed(2)+' in')+lead('Cheapest',best(x=>x.p.v),v=>'$'+Math.round(v).toLocaleString('en-US'))+lead('Least recoil',best(x=>x.rc),v=>v.toFixed(1)+' in')+
       (bare.length?`<div class="leader"><span class="k">Bare muzzle</span><span class="v">${(bare.reduce((s,x)=>s+x.q,0)/bare.length).toFixed(1)} dB</span><span class="n">Unsuppressed reference</span></div>`:'')+
       (one?'':`<div class="leader"><span class="k">Mixed hosts</span><span class="n">These cans are scored together on one scale. Sound from different hosts isn't a fair fight: a .22 pistol is always quieter than a .300 Win Mag.</span></div>`);
   }
@@ -321,6 +339,7 @@ function render(){
 <td>${metric(x.w!=null?x.w.toFixed(1):'—',x.s.w)}</td>
 <td>${le?`<input type="number" step="0.05" min="0" data-in="l" data-key="${id}" value="${x.l.v??''}" aria-label="Length past muzzle, inches">`:metric(`<button type="button" class="edit" data-ed="l" data-key="${id}">${fmtLen(x.l)}</button>`,x.s.l)}</td>
 <td>${pe?`<input type="number" step="1" min="0" data-in="p" data-key="${id}" value="${x.p.v!=null?Math.round(x.p.v):''}" aria-label="Price, dollars">`:metric(`<button type="button" class="edit" data-ed="p" data-key="${id}">${fmtPrice(x.p)}</button>`,x.s.p)}</td>
+<td>${x.rc!=null?metric(`<span title="${esc(rcTip(r))}">${x.rc.toFixed(1)}${r.rcs!=='as tested'?'<span class="tag">'+esc(shortSetup(r.rcs))+'</span>':''}</span>`,x.s.r):'<span class="muted" title="Not in the Outdoor Life recoil test">—</span>'}</td>
 <td>${r.d!=null?r.d.toFixed(2):'—'}</td>
 <td class="l"><span class="muted">${esc(hostName(r.h))} · ${esc(r.b)} · ${r.y}</span></td></tr>${noteOpen&&noteOpen.key===key&&noteOpen.rid===(key+'|'+r.y+'|'+r.h)?`<tr class="noterow"><td colspan="${COLS.length}"><div class="noteform"><label class="lbl" for="noteInput">Why this can?</label><input id="noteInput" data-note="${id}" maxlength="200" placeholder="e.g. Dirt cheap 9mm PCC can" value="${esc(st.notes[key]||'')}"><button type="button" class="btn primary" data-notedone>Save note</button><button type="button" class="btn" data-notedone>Skip</button></div></td></tr>`:''}`}).join(''):`<tr><td colspan="${COLS.length}" class="empty">No cans match. Clear the search or the Starred and Priced filters.</td></tr>`;
   $('tbl').innerHTML=head+'<tbody>'+body+'</tbody>';
@@ -328,6 +347,15 @@ function render(){
   const ni=$('noteInput');if(ni&&noteOpen&&noteOpen.focus){noteOpen.focus=false;ni.focus()}
   renderSaved(rows);save();
 }
+
+let olSort={k:'rc',dir:1};
+function renderOL(){const L=(RAW.ol||[]).slice();$('olcount').textContent=L.length;
+  const C=[['n','Setup'],['rc','Recoil in'],['sd','Sound dB'],['w','Weight oz'],['l','Length in'],['u','On page']];
+  L.sort((a,b)=>{const A=a[olSort.k],B=b[olSort.k];if(A==null&&B==null)return 0;if(A==null)return 1;if(B==null)return-1;return(A<B?-1:A>B?1:0)*olSort.dir});
+  const f=v=>v==null?'<span class="muted">—</span>':v.toFixed(1);
+  $('oltbl').innerHTML='<thead><tr>'+C.map(([k,t],i)=>`<th scope="col" class="${i?'':'l'}"><button type="button" data-olk="${k}"${olSort.k===k?` data-dir="${olSort.dir>0?'asc':'desc'}"`:''}>${t}</button></th>`).join('')+'</tr></thead><tbody>'+
+    L.map(o=>`<tr><td class="l">${esc(o.n)}</td><td>${f(o.rc)}</td><td>${f(o.sd)}</td><td>${f(o.w)}</td><td>${f(o.l)}</td><td>${o.u?'<span class="tag">on page</span>':''}</td></tr>`).join('')+'</tbody>'}
+$('oltbl').addEventListener('click',e=>{const b=e.target.closest('[data-olk]');if(!b)return;const k=b.dataset.olk;olSort=olSort.k===k?{k,dir:-olSort.dir}:{k,dir:k==='u'?-1:1};renderOL()});
 
 function renderSaved(rows){
   $('svcount').textContent=st.saved.length?`${st.saved.length} can${st.saved.length>1?'s':''}`:'';
@@ -337,7 +365,7 @@ function renderSaved(rows){
     const r0=tests[0];const sc=rows.filter(x=>canKey(x.r)===key);
     const p=price(r0),l=length(r0);
     const lines=sc.length?sc.sort((a,b)=>a.q-b.q).map(x=>`<tr><td class="l">${esc(hostName(x.r.h))} · ${esc(x.r.b)} · ${x.r.y}</td><td>${x.q.toFixed(1)}</td><td>${x.i!=null?x.i.toFixed(1):'—'}</td><td>${x.e!=null?x.e.toFixed(1):'—'}</td><td>${fmtPrice(x.p)}</td><td>${x.score!=null?x.score.toFixed(0)+' <span class="rank">#'+x.rank+' of '+x.n+'</span>':'—'}</td></tr>`).join(''):`<tr><td class="l muted" colspan="6">Not tested in the selected year</td></tr>`;
-    return`<div class="tblwrap"><table><thead><tr><th class="l" scope="col"><button type="button" class="star" data-star="${esc(key)}" aria-pressed="true" aria-label="Unstar">★</button> ${esc(r0.m)} ${esc(r0.s)}${r0.otb?'<span class="tag otb">OTB</span>':''} <span class="muted" style="text-transform:none;letter-spacing:0;font-weight:400">${[r0.w!=null?r0.w.toFixed(1)+' oz':'',l.v!=null?l.v.toFixed(2)+' in past muzzle':''].filter(Boolean).map(t=>' · '+t).join('')}</span><div class="svwrap"><label class="lbl" for="sn-${esc(key)}">Why this can?</label><input class="svnote" id="sn-${esc(key)}" data-svnote="${esc(key)}" maxlength="200" placeholder="e.g. Dirt cheap 9mm PCC can" value="${esc(st.notes[key]||'')}"></div></th><th scope="col">Peak</th><th scope="col">Impulse</th><th scope="col">Ear</th><th scope="col">Price</th><th scope="col">Score</th></tr></thead><tbody>${lines}</tbody></table></div>`}).join('');
+    return`<div class="tblwrap"><table><thead><tr><th class="l" scope="col"><button type="button" class="star" data-star="${esc(key)}" aria-pressed="true" aria-label="Unstar">★</button> ${esc(r0.m)} ${esc(r0.s)}${r0.otb?'<span class="tag otb">OTB</span>':''} <span class="muted" style="text-transform:none;letter-spacing:0;font-weight:400">${[r0.w!=null?r0.w.toFixed(1)+' oz':'',l.v!=null?l.v.toFixed(2)+' in past muzzle':'',r0.rc!=null?'recoil '+r0.rc.toFixed(1)+' in':''].filter(Boolean).map(t=>' · '+t).join('')}</span><div class="svwrap"><label class="lbl" for="sn-${esc(key)}">Why this can?</label><input class="svnote" id="sn-${esc(key)}" data-svnote="${esc(key)}" maxlength="200" placeholder="e.g. Dirt cheap 9mm PCC can" value="${esc(st.notes[key]||'')}"></div></th><th scope="col">Peak</th><th scope="col">Impulse</th><th scope="col">Ear</th><th scope="col">Price</th><th scope="col">Score</th></tr></thead><tbody>${lines}</tbody></table></div>`}).join('');
   $('saved').innerHTML=out;
 }
 
@@ -366,36 +394,44 @@ $('q').addEventListener('input',e=>{st.q=e.target.value;render()});
 $('onlySaved').addEventListener('change',e=>{st.onlySaved=e.target.checked;render()});
 $('onlyPriced').addEventListener('change',e=>{st.onlyPriced=e.target.checked;render()});
 // sliders are linked: they always add up to 100%. Moving one shares the rest among the others in their current proportions.
-function setWeight(m,v){v=Math.max(0,Math.min(100,Math.round(v)));const others=['q','w','l','p'].filter(k=>k!==m);
+function setWeight(m,v){v=Math.max(0,Math.min(100,Math.round(v)));const others=MS.filter(k=>k!==m&&!st.off[k]);
+  if(!others.length){st.w[m]=st.off[m]?0:100;return}
   const prev=others.reduce((s,k)=>s+(st.w[k]||0),0),rest=100-v;
   const raw=others.map(k=>prev>0?(st.w[k]||0)/prev*rest:rest/others.length);
   const fl=raw.map(Math.floor);let left=rest-fl.reduce((a,b)=>a+b,0);
   raw.map((x,i)=>[x-fl[i],i]).sort((a,b)=>b[0]-a[0]).forEach(([,i])=>{if(left>0){fl[i]++;left--}});
   st.w[m]=v;others.forEach((k,i)=>st.w[k]=fl[i])}
-function normWeights(){const t=['q','w','l','p'].reduce((s,k)=>s+(+st.w[k]||0),0);if(t===100)return;
-  if(!t){st.w={q:50,w:50,l:0,p:0};return}const q=st.w.q;st.w.q=(+q||0)/t*100;setWeight('q',st.w.q)}
+// unchecked measures weigh zero; the checked ones always share 100%
+function normWeights(){st.off=st.off||{};st.prev=st.prev||{};MS.forEach(k=>{st.w[k]=+st.w[k]||0;if(st.off[k])st.w[k]=0});
+  const ons=MS.filter(k=>!st.off[k]);if(!ons.length)return;const t=ons.reduce((s,k)=>s+st.w[k],0);if(t===100)return;
+  setWeight(ons[0],t?st.w[ons[0]]/t*100:100/ons.length)}
+function toggle(m,on){if(on){st.off[m]=false;delete st.off[m];setWeight(m,st.prev[m]||0)}
+  else{st.prev[m]=st.w[m];st.off[m]=true;st.w[m]=0;normWeights()}
+  st.sort={k:'score',dir:'desc'};render()}
+document.addEventListener('change',e=>{const m=e.target.dataset&&e.target.dataset.on;if(m)toggle(m,e.target.checked)});
 normWeights();
 let raf=0;
 function onSlide(m,e,end){setWeight(m,+e.target.value);st.sort={k:'score',dir:'desc'};dragging=!end;
   if(end){cancelAnimationFrame(raf);raf=0;render();return}
   if(!raf)raf=requestAnimationFrame(()=>{raf=0;render()})}
-['q','w','l','p'].forEach(m=>{const el=$('w-'+m);
+MS.forEach(m=>{const el=$('w-'+m);
   el.addEventListener('input',e=>onSlide(m,e,false));
   el.addEventListener('change',e=>onSlide(m,e,true));});
 $('mix').addEventListener('input',e=>{st.mix=+e.target.value;st.sort={k:'score',dir:'desc'};if(!raf)raf=requestAnimationFrame(()=>{raf=0;render()})});
 $('mix').addEventListener('change',e=>{st.mix=+e.target.value;render()});
-$('wreset').addEventListener('click',()=>{st.w={q:50,w:50,l:0,p:0};st.sort={k:'score',dir:'desc'};render()});
+$('wreset').addEventListener('click',()=>{st.w={q:50,w:50,l:0,p:0,r:0};st.off={};st.prev={};st.sort={k:'score',dir:'desc'};render()});
 function copy(text,msg){const done=()=>toast(msg);try{navigator.clipboard.writeText(text).then(done,()=>fallback())}catch(e){fallback()}
   function fallback(){$('importBox').hidden=false;$('importText').value=text;$('importText').select();$('importMsg').textContent='Copy this text with your keyboard.'}}
 $('copyLink').addEventListener('click',()=>{if(!st.saved.length){toast('Star a can first');return}
   const u=new URL(location.href);u.hash='';u.search='?saved='+st.saved.map(encodeURIComponent).join('~');const nn={};st.saved.forEach(k=>{if(st.notes[k])nn[k]=st.notes[k]});if(Object.keys(nn).length)u.searchParams.set('notes',JSON.stringify(nn));copy(u.toString(),'Share link copied')});
-$('copyJson').addEventListener('click',()=>copy(JSON.stringify({saved:st.saved,notes:st.notes,price:st.price,len:st.len,w:st.w,mix:st.mix}),'Backup copied'));
+$('copyJson').addEventListener('click',()=>copy(JSON.stringify({saved:st.saved,notes:st.notes,price:st.price,len:st.len,w:st.w,off:st.off,prev:st.prev,mix:st.mix}),'Backup copied'));
 $('showImport').addEventListener('click',()=>{$('importBox').hidden=!$('importBox').hidden;$('importMsg').textContent=''});
 $('doImport').addEventListener('click',()=>{try{const o=JSON.parse($('importText').value);
-  if(Array.isArray(o.saved))st.saved=[...new Set([...st.saved,...o.saved])];if(o.notes)Object.assign(st.notes,o.notes);if(o.price)Object.assign(st.price,o.price);if(o.len)Object.assign(st.len,o.len);if(o.w){st.w=o.w;normWeights()}if(o.mix!=null)st.mix=+o.mix;
+  if(Array.isArray(o.saved))st.saved=[...new Set([...st.saved,...o.saved])];if(o.notes)Object.assign(st.notes,o.notes);if(o.price)Object.assign(st.price,o.price);if(o.len)Object.assign(st.len,o.len);if(o.w){st.w=o.w;st.off=o.off||{};st.prev=o.prev||{};normWeights()}if(o.mix!=null)st.mix=+o.mix;
   $('importBox').hidden=true;$('importText').value='';render();toast('Backup restored')}catch(e){$('importMsg').textContent='That text is not a backup from this page. Copy it again with "Copy backup".'}});
 $('clearSaved').addEventListener('click',e=>{const b=e.currentTarget;if(b.dataset.armed){st.saved=[];delete b.dataset.armed;b.textContent='Clear stars';render();return}
   b.dataset.armed=1;b.textContent='Click again to clear';setTimeout(()=>{delete b.dataset.armed;b.textContent='Clear stars'},3000)});
+renderOL();
 render();
 })();
 </script>
